@@ -1,0 +1,1646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>SmartPay — Attendance Control</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600;700;800&family=Barlow+Condensed:wght@700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:         #07090d;
+    --bg-elevated:#0d1017;
+    --surface:    rgba(18, 22, 30, 0.72);
+    --surface-solid:#12161f;
+    --border:     rgba(255,255,255,0.06);
+    --border2:    rgba(255,255,255,0.11);
+    --text:       #e8ecf4;
+    --muted:      #7d8a9e;
+    --accent:     #2ee6a8;
+    --accent-dim: rgba(46, 230, 168, 0.14);
+    --accent2:    #4db8ff;
+    --accent2-dim:rgba(77, 184, 255, 0.12);
+    --warn:       #ffb020;
+    --danger:     #ff5c7a;
+    --in:         #2ee6a8;
+    --out:        #4db8ff;
+    --radius-sm:  6px;
+    --radius:     12px;
+    --radius-lg:  16px;
+    --shadow-sm:  0 1px 2px rgba(0,0,0,0.35);
+    --shadow-md:  0 12px 40px rgba(0,0,0,0.45);
+    --mono:       'JetBrains Mono', ui-monospace, monospace;
+    --sans:       'Outfit', system-ui, sans-serif;
+    --cond:       'Barlow Condensed', sans-serif;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html { scroll-behavior:smooth; }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior:auto; }
+    *, *::before, *::after { animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; }
+  }
+  body {
+    background:var(--bg);
+    background-image:
+      radial-gradient(ellipse 100% 70% at 15% -20%, rgba(46, 230, 168, 0.09), transparent 55%),
+      radial-gradient(ellipse 80% 60% at 95% 10%, rgba(77, 184, 255, 0.07), transparent 50%),
+      radial-gradient(ellipse 60% 40% at 50% 100%, rgba(77, 184, 255, 0.04), transparent 45%);
+    color:var(--text);
+    font-family:var(--sans);
+    font-size:15px;
+    line-height:1.45;
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  body::before {
+    content:''; position:fixed; inset:0;
+    background:repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.018) 2px, rgba(255,255,255,0.018) 4px);
+    pointer-events:none; z-index:0;
+  }
+  header {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:max(16px, env(safe-area-inset-top, 16px)) max(32px, env(safe-area-inset-right, 0px)) 16px max(32px, env(safe-area-inset-left, 0px));
+    background:var(--surface);
+    backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
+    border-bottom:1px solid var(--border);
+    box-shadow:0 4px 24px rgba(0,0,0,0.2);
+    position:sticky; top:0; z-index:100;
+  }
+  nav {
+    display:flex; flex-wrap:nowrap; align-items:stretch;
+    padding:0 max(28px, env(safe-area-inset-right, 0px)) 0 max(28px, env(safe-area-inset-left, 0px));
+    gap:4px;
+    overflow-x:auto; overflow-y:hidden;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:thin;
+    scroll-snap-type:x proximity;
+    background:var(--surface);
+    backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+    border-bottom:1px solid var(--border);
+    position:relative; z-index:50;
+  }
+  main {
+    padding:32px;
+    padding-left:max(32px, env(safe-area-inset-left, 0px));
+    padding-right:max(32px, env(safe-area-inset-right, 0px));
+    padding-bottom:max(32px, env(safe-area-inset-bottom, 0px));
+    max-width:1600px; margin:0 auto; position:relative; z-index:1;
+  }
+  .logo { display:flex; flex-direction:column; align-items:flex-start; gap:2px; }
+  .logo-mark {
+    font-family:var(--cond); font-size:28px; font-weight:900; letter-spacing:3px;
+    color:#fff; text-transform:uppercase; line-height:1;
+  }
+  .logo-mark span {
+    color:var(--accent);
+    text-shadow:0 0 32px rgba(46, 230, 168, 0.35);
+  }
+  .logo-sub { font-family:var(--mono); font-size:9px; color:var(--muted); letter-spacing:4px; text-transform:uppercase; font-weight:500; }
+  .header-right { display:flex; align-items:center; gap:20px; }
+  .live-badge {
+    display:inline-flex; align-items:center; gap:8px;
+    font-family:var(--mono); font-size:10px; font-weight:600;
+    color:var(--accent); letter-spacing:3px;
+    padding:6px 12px; border-radius:999px;
+    background:var(--accent-dim); border:1px solid rgba(46, 230, 168, 0.25);
+  }
+  .live-dot { width:8px; height:8px; border-radius:50%; background:var(--accent);
+    box-shadow:0 0 12px var(--accent); animation:pulse 1.6s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.55;transform:scale(0.85)} }
+  .clock {
+    font-family:var(--mono); font-size:12px; font-weight:500;
+    color:var(--muted); padding:8px 12px; border-radius:var(--radius-sm);
+    background:rgba(0,0,0,0.2); border:1px solid var(--border);
+  }
+  .tab {
+    flex:0 0 auto; scroll-snap-align:start;
+    padding:14px 18px; font-family:var(--mono); font-size:10px; font-weight:600;
+    letter-spacing:1.5px; text-transform:uppercase; color:var(--muted);
+    cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-1px;
+    transition:color 0.2s, border-color 0.2s, background 0.2s;
+    border-radius:var(--radius-sm) var(--radius-sm) 0 0;
+    min-height:44px; display:inline-flex; align-items:center; justify-content:center;
+    touch-action:manipulation;
+  }
+  .tab:hover { color:var(--text); background:rgba(255,255,255,0.03); }
+  .tab.active {
+    color:var(--accent);
+    border-bottom-color:var(--accent);
+    background:linear-gradient(180deg, rgba(46,230,168,0.08) 0%, transparent 100%);
+  }
+  .panel { display:none; animation:fadeIn 0.28s ease; }
+  .panel.active { display:block; }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+  @media (prefers-reduced-motion: reduce) { .panel { animation:none; } }
+
+  .stats-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:32px; }
+  .stat-card {
+    background:var(--surface-solid);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:22px 24px;
+    position:relative; overflow:hidden;
+    box-shadow:var(--shadow-sm);
+    transition:transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+  }
+  .stat-card::before { content:''; position:absolute; top:0; left:0; width:4px; height:100%; border-radius:var(--radius) 0 0 var(--radius); }
+  .stat-card::after {
+    content:''; position:absolute; inset:0; pointer-events:none;
+    background:radial-gradient(120% 80% at 100% 0%, rgba(255,255,255,0.04), transparent 55%);
+    border-radius:inherit;
+  }
+  .stat-card:hover { transform:translateY(-2px); border-color:var(--border2); box-shadow:var(--shadow-md); }
+  .stat-card.green::before  { background:linear-gradient(180deg, var(--accent), rgba(46,230,168,0.4)); box-shadow:0 0 20px rgba(46,230,168,0.35); }
+  .stat-card.blue::before   { background:linear-gradient(180deg, var(--accent2), rgba(77,184,255,0.4)); box-shadow:0 0 20px rgba(77,184,255,0.25); }
+  .stat-card.orange::before { background:linear-gradient(180deg, var(--warn), rgba(255,176,32,0.45)); }
+  .stat-label { font-family:var(--mono); font-size:9px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:var(--muted); margin-bottom:12px; }
+  .stat-value { font-family:var(--cond); font-size:44px; font-weight:900; line-height:1; color:#fff; letter-spacing:-1px; }
+  .stat-card.green  .stat-value { color:var(--accent); }
+  .stat-card.blue   .stat-value { color:var(--accent2); }
+  .stat-card.orange .stat-value { color:var(--warn); }
+
+  .table-wrap {
+    background:var(--surface-solid);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    overflow:hidden;
+    box-shadow:var(--shadow-sm);
+  }
+  .table-header {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:16px 22px;
+    background:linear-gradient(180deg, rgba(255,255,255,0.04) 0%, transparent 100%);
+    border-bottom:1px solid var(--border);
+  }
+  .table-title { font-family:var(--mono); font-size:10px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:var(--text); }
+  .table-meta { font-family:var(--mono); font-size:10px; color:var(--muted); }
+  table { width:100%; border-collapse:collapse; }
+  thead th {
+    padding:12px 22px; font-family:var(--mono); font-size:9px; font-weight:600;
+    letter-spacing:1.5px; text-transform:uppercase; color:var(--muted);
+    text-align:left; background:rgba(0,0,0,0.35); border-bottom:1px solid var(--border);
+  }
+  tbody tr { border-bottom:1px solid var(--border); transition:background 0.15s; }
+  tbody tr:last-child { border-bottom:none; }
+  tbody tr:hover { background:rgba(46, 230, 168, 0.04); }
+  tbody td { padding:14px 22px; font-size:14px; color:var(--text); }
+  .emp-name { font-weight:600; color:#fff; letter-spacing:-0.02em; }
+  .emp-id { font-family:var(--mono); font-size:11px; color:var(--muted); font-weight:500; }
+  .time-val { font-family:var(--mono); font-size:12px; font-weight:500; color:var(--text); }
+  .no-data {
+    text-align:center; padding:48px 24px;
+    font-family:var(--mono); font-size:12px; font-weight:500;
+    color:var(--muted); letter-spacing:2px;
+  }
+
+  .badge {
+    display:inline-block; padding:4px 10px; font-family:var(--mono); font-size:9px; font-weight:600;
+    letter-spacing:0.8px; text-transform:uppercase; border-radius:6px; white-space:nowrap;
+  }
+  .badge-in       { background:var(--accent-dim); color:var(--in); border:1px solid rgba(46,230,168,0.35); }
+  .badge-out      { background:var(--accent2-dim); color:var(--out); border:1px solid rgba(77,184,255,0.35); }
+  .badge-ignored  { background:rgba(125,138,158,0.12); color:var(--muted); border:1px solid rgba(125,138,158,0.25); }
+  .badge-ontime   { background:var(--accent-dim); color:var(--accent); border:1px solid rgba(46,230,168,0.35); }
+  .badge-late     { background:rgba(255,92,122,0.12); color:var(--danger); border:1px solid rgba(255,92,122,0.35); }
+  .badge-earlyout { background:rgba(255,176,32,0.12); color:var(--warn); border:1px solid rgba(255,176,32,0.35); }
+  .badge-absent   { background:rgba(255,92,122,0.08); color:var(--danger); border:1px solid rgba(255,92,122,0.22); }
+  .badge-notout   { background:rgba(125,138,158,0.1); color:var(--muted); border:1px solid rgba(125,138,158,0.22); }
+  .badge-leftlate { background:rgba(179,102,255,0.12); color:#c99cff; border:1px solid rgba(179,102,255,0.35); }
+  .badge-pending  { background:rgba(255,176,32,0.12); color:var(--warn); border:1px solid rgba(255,176,32,0.35); }
+
+  .filter-row { display:flex; align-items:center; gap:14px; margin-bottom:22px; flex-wrap:wrap; }
+  .filter-label { font-family:var(--mono); font-size:10px; font-weight:600; letter-spacing:1.5px; color:var(--muted); text-transform:uppercase; }
+  input[type="date"],input[type="password"],input[type="text"],input[type="time"],input[type="number"],
+  select {
+    background:rgba(0,0,0,0.25); border:1px solid var(--border2); color:var(--text);
+    padding:10px 14px; font-family:var(--mono); font-size:12px; font-weight:500;
+    outline:none; border-radius:var(--radius-sm);
+    transition:border-color 0.2s, box-shadow 0.2s;
+  }
+  input:focus-visible, select:focus-visible {
+    border-color:var(--accent);
+    box-shadow:0 0 0 3px rgba(46, 230, 168, 0.18);
+  }
+  .refresh-btn {
+    background:rgba(255,255,255,0.04); border:1px solid var(--border2); color:var(--muted);
+    padding:10px 16px; font-family:var(--mono); font-size:10px; font-weight:600;
+    cursor:pointer; letter-spacing:1.5px; text-transform:uppercase;
+    border-radius:var(--radius-sm); transition:all 0.2s;
+  }
+  .refresh-btn:hover { border-color:var(--accent); color:var(--accent); background:rgba(46,230,168,0.06); }
+  .refresh-btn:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+
+  .legend {
+    display:flex; gap:14px; flex-wrap:wrap; margin-bottom:22px; padding:16px 20px;
+    background:var(--surface-solid); border:1px solid var(--border);
+    border-radius:var(--radius); align-items:center;
+  }
+  .legend-item { display:flex; align-items:center; gap:8px; font-family:var(--mono); font-size:10px; color:var(--muted); letter-spacing:0.5px; }
+  .delta-late  { color:var(--danger); font-family:var(--mono); font-size:11px; font-weight:500; }
+  .delta-early { color:var(--warn);   font-family:var(--mono); font-size:11px; font-weight:500; }
+  .delta-ok    { color:var(--muted);  font-family:var(--mono); font-size:11px; }
+
+  .shift-window {
+    background:var(--bg-elevated); border:1px solid var(--border2);
+    padding:20px 22px; margin-bottom:16px; border-radius:var(--radius);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,0.04);
+  }
+  .shift-window-name { font-family:var(--cond); font-size:19px; font-weight:800; letter-spacing:2px; text-transform:uppercase; color:#fff; }
+  .shift-timeline { display:flex; height:38px; margin:16px 0; border-radius:var(--radius-sm); overflow:hidden; }
+  .shift-segment {
+    height:100%; display:flex; align-items:center; justify-content:center;
+    font-family:var(--mono); font-size:8px; font-weight:600; letter-spacing:1px;
+    text-transform:uppercase; text-align:center; line-height:1.35;
+  }
+  .seg-before   { background:rgba(125,138,158,0.1); color:var(--muted); flex:2; border:1px solid var(--border); }
+  .seg-checkin  { background:var(--accent-dim); color:var(--accent); flex:1; border:1px solid rgba(46,230,168,0.35); }
+  .seg-work     { background:rgba(0,0,0,0.25); color:var(--muted); flex:4; border:1px solid var(--border); font-size:7px; }
+  .seg-checkout { background:var(--accent2-dim); color:var(--accent2); flex:1; border:1px solid rgba(77,184,255,0.35); }
+  .seg-after    { background:rgba(125,138,158,0.1); color:var(--muted); flex:2; border:1px solid var(--border); }
+  .shift-times { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:10px; }
+  .shift-edit-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:14px; }
+
+  .admin-lock { text-align:center; padding:72px 24px; }
+  .admin-lock-title {
+    font-family:var(--cond); font-size:24px; font-weight:800; letter-spacing:5px;
+    text-transform:uppercase; color:var(--muted); margin-bottom:24px;
+  }
+  .input-row { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+
+  .btn {
+    padding:10px 22px; font-family:var(--mono); font-size:10px; font-weight:600;
+    letter-spacing:1.5px; text-transform:uppercase; cursor:pointer; border:none;
+    border-radius:var(--radius-sm); transition:transform 0.15s, box-shadow 0.2s, background 0.2s;
+  }
+  .btn:active { transform:scale(0.98); }
+  .btn-primary {
+    background:linear-gradient(135deg, var(--accent) 0%, #1fc78f 100%);
+    color:#04120c; font-weight:700;
+    box-shadow:0 4px 20px rgba(46, 230, 168, 0.25);
+  }
+  .btn-primary:hover { filter:brightness(1.08); box-shadow:0 6px 28px rgba(46, 230, 168, 0.35); }
+  .btn-primary:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
+  .btn-secondary {
+    background:rgba(255,255,255,0.04); border:1px solid var(--border2); color:var(--text);
+  }
+  .btn-secondary:hover { border-color:var(--accent); color:var(--accent); background:rgba(46,230,168,0.06); }
+  .btn-sm { padding:6px 14px; font-size:9px; }
+  .form-group { margin-bottom:16px; }
+  .form-label { display:block; font-family:var(--mono); font-size:9px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:var(--muted); margin-bottom:8px; }
+  .form-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .section-title {
+    font-family:var(--mono); font-size:10px; font-weight:600; letter-spacing:2.5px;
+    text-transform:uppercase; color:var(--accent); margin-bottom:18px; padding-bottom:12px;
+    border-bottom:1px solid var(--border);
+  }
+  .admin-grid { display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+
+  .panel-toolbar {
+    display:flex; align-items:center; justify-content:space-between;
+    gap:12px; margin-bottom:20px; flex-wrap:wrap;
+  }
+  .panel-toolbar h2 {
+    font-family:var(--cond); font-size:22px; font-weight:800; letter-spacing:2px;
+    text-transform:uppercase; color:var(--text); margin:0; line-height:1.2;
+  }
+  .panel-toolbar-actions { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+
+  .toast {
+    position:fixed; bottom: max(28px, env(safe-area-inset-bottom, 0px)); right: max(16px, env(safe-area-inset-right, 0px)); left:auto;
+    background:var(--surface-solid); backdrop-filter:blur(12px);
+    border:1px solid rgba(46,230,168,0.4); color:var(--accent);
+    padding:14px 22px; font-family:var(--mono); font-size:12px; font-weight:500;
+    letter-spacing:0.5px; border-radius:var(--radius);
+    opacity:0; transform:translateY(12px); transition:opacity 0.35s, transform 0.35s;
+    z-index:9000; box-shadow:var(--shadow-md);
+    max-width:min(420px, calc(100vw - 40px));
+  }
+  .toast.show { opacity:1; transform:translateY(0); }
+
+  @media(max-width:900px) {
+    .stats-grid { grid-template-columns:repeat(2,1fr); }
+    main {
+      padding:20px 16px;
+      padding-left:max(16px, env(safe-area-inset-left, 0px));
+      padding-right:max(16px, env(safe-area-inset-right, 0px));
+      padding-bottom:max(20px, env(safe-area-inset-bottom, 0px));
+    }
+    header {
+      padding:max(14px, env(safe-area-inset-top, 14px)) max(16px, env(safe-area-inset-right, 0px)) 14px max(16px, env(safe-area-inset-left, 0px));
+    }
+    nav { padding:0 max(12px, env(safe-area-inset-right, 0px)) 0 max(12px, env(safe-area-inset-left, 0px)); }
+    .report-card { padding:20px 18px; }
+  }
+  @media(max-width:900px) { .admin-grid { grid-template-columns:1fr; } }
+
+  @media(max-width:720px) {
+    .table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+    .table-wrap > table { min-width:560px; }
+    #panel-compliance .table-wrap > table { min-width:920px; }
+    .table-header {
+      flex-direction:column; align-items:flex-start; gap:8px;
+    }
+    thead th, tbody td { padding:12px 14px; font-size:13px; }
+    .stat-value { font-size:36px; }
+    .shift-timeline {
+      overflow-x:auto; -webkit-overflow-scrolling:touch;
+      margin-left:-4px; margin-right:-4px; padding:0 4px;
+    }
+    .shift-timeline::-webkit-scrollbar { height:6px; }
+    .shift-segment { flex-shrink:0; min-width:64px; }
+    .shift-window > div:first-child {
+      flex-wrap:wrap; gap:10px; align-items:flex-start !important;
+    }
+  }
+
+  @media(max-width:600px) {
+    .toast {
+      left:max(12px, env(safe-area-inset-left, 0px));
+      right:max(12px, env(safe-area-inset-right, 0px));
+      max-width:none;
+    }
+    header {
+      flex-direction:column; align-items:stretch; gap:14px;
+    }
+    .header-right {
+      width:100%; justify-content:space-between; flex-wrap:wrap; gap:10px;
+    }
+    .logo-mark { font-size:22px; letter-spacing:2px; }
+    .logo-sub { font-size:8px; letter-spacing:3px; }
+    .form-grid-2 { grid-template-columns:1fr; }
+    .shift-times { grid-template-columns:1fr; }
+    .shift-edit-grid { grid-template-columns:1fr; }
+    .panel-toolbar { flex-direction:column; align-items:stretch; }
+    .panel-toolbar-actions { width:100%; }
+    .panel-toolbar-actions .btn,
+    .panel-toolbar-actions .refresh-btn {
+      flex:1; min-height:44px;
+      display:inline-flex; align-items:center; justify-content:center;
+    }
+    .filter-row { gap:10px; }
+    .legend { padding:12px 14px; gap:10px; }
+    .modal-overlay { padding:12px; align-items:flex-end; padding-bottom: env(safe-area-inset-bottom, 12px); }
+    .modal {
+      width:100%; max-width:100%;
+      max-height:92vh;
+      max-height:100dvh;
+      border-radius:var(--radius-lg) var(--radius-lg) 0 0;
+      padding:22px 16px 24px;
+    }
+    .modal-title { font-size:18px; padding-right:44px; }
+    .export-btns { flex-direction:column; }
+    .export-btns .btn { width:100%; min-height:44px; }
+    .report-preview {
+      overflow-x:auto; -webkit-overflow-scrolling:touch;
+      border-radius:var(--radius-sm);
+    }
+    .preview-row.daily-grid { min-width:720px; }
+    .preview-row.monthly-grid { min-width:760px; }
+    .admin-lock { padding:40px 16px; }
+    .input-row { flex-direction:column; width:100%; max-width:100%; }
+    .input-row input[type="password"] { width:100% !important; max-width:100%; }
+    .input-row .btn { width:100%; min-height:44px; }
+  }
+
+  @media(max-width:520px) {
+    .stats-grid { grid-template-columns:1fr; gap:12px; }
+    main {
+      padding:16px 12px;
+      padding-left:max(12px, env(safe-area-inset-left, 0px));
+      padding-right:max(12px, env(safe-area-inset-right, 0px));
+      padding-bottom:max(16px, env(safe-area-inset-bottom, 0px));
+    }
+    .stat-card { padding:18px 16px; }
+    .stat-value { font-size:32px; }
+    body { font-size:14px; }
+    .refresh-btn, .btn { min-height:44px; }
+  }
+
+  /* ── LIGHT MODE ── */
+  body.light {
+    --bg:         #eef1f6;
+    --bg-elevated:#e4e8f0;
+    --surface:    rgba(255, 255, 255, 0.82);
+    --surface-solid:#ffffff;
+    --border:     rgba(15, 23, 42, 0.08);
+    --border2:    rgba(15, 23, 42, 0.14);
+    --text:       #1e293b;
+    --muted:      #64748b;
+    --accent:     #059669;
+    --accent-dim: rgba(5, 150, 105, 0.12);
+    --accent2:    #0369a1;
+    --accent2-dim:rgba(3, 105, 161, 0.1);
+    --warn:       #b45309;
+    --danger:     #be123c;
+    --in:         #059669;
+    --out:        #0369a1;
+  }
+  body.light {
+    background-image:
+      radial-gradient(ellipse 90% 60% at 10% 0%, rgba(5, 150, 105, 0.08), transparent 50%),
+      radial-gradient(ellipse 70% 50% at 100% 20%, rgba(3, 105, 161, 0.06), transparent 50%);
+  }
+  body.light::before {
+    background:repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(15,23,42,0.03) 2px, rgba(15,23,42,0.03) 4px);
+  }
+  body.light .logo-mark span { text-shadow:none; }
+  body.light .seg-before, body.light .seg-after { background: rgba(15,23,42,0.05); }
+  body.light .seg-work  { background: rgba(15,23,42,0.04); }
+  body.light tbody tr:hover { background: rgba(5, 150, 105, 0.06); }
+  body.light thead th { background: rgba(15,23,42,0.04); }
+  body.light .shift-window { background: #f8fafc; }
+  body.light input[type="date"], body.light input[type="password"], body.light input[type="text"],
+  body.light input[type="time"], body.light input[type="number"], body.light select {
+    background:#fff;
+  }
+  body.light .clock { background:rgba(15,23,42,0.04); }
+  body.light .live-dot { box-shadow:0 0 8px var(--accent); }
+  body.light .logo-mark { color:var(--text); }
+  body.light .emp-name { color:var(--text); }
+  body.light .shift-window-name { color:var(--text); }
+  body.light .stat-card:not(.green):not(.blue):not(.orange) .stat-value { color:var(--text); }
+
+  /* ── THEME TOGGLE ── */
+  .theme-toggle {
+    background:rgba(255,255,255,0.05); border:1px solid var(--border2); color:var(--muted);
+    width:42px; height:42px; cursor:pointer; font-size:18px;
+    display:flex; align-items:center; justify-content:center;
+    transition:all 0.2s; border-radius:var(--radius-sm);
+  }
+  .theme-toggle:hover { border-color:var(--accent); color:var(--accent); background:rgba(46,230,168,0.08); }
+  .theme-toggle:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+  body.light .theme-toggle { background:#fff; }
+
+  /* ── EMPLOYEE TAB ── */
+  .emp-search-wrap { position:relative; }
+  .emp-dropdown {
+    position:absolute; top:calc(100% + 6px); left:0; right:0;
+    background:var(--surface-solid); border:1px solid var(--border2);
+    z-index:200; max-height:240px; overflow-y:auto;
+    display:none; border-radius:var(--radius-sm); box-shadow:var(--shadow-md);
+  }
+  .emp-dropdown.open { display:block; }
+  .emp-dropdown-item {
+    padding:12px 16px; cursor:pointer; border-bottom:1px solid var(--border);
+    font-size:14px; transition:background 0.12s;
+  }
+  .emp-dropdown-item:last-child { border-bottom:none; }
+  .emp-dropdown-item:hover { background:rgba(46,230,168,0.08); }
+  body.light .emp-dropdown-item:hover { background:rgba(5,150,105,0.08); }
+  .emp-dropdown-item .emp-dropdown-id { font-family:var(--mono); font-size:11px; color:var(--muted); font-weight:500; }
+
+  /* ── REPORT TAB ── */
+  .report-card {
+    background:var(--surface-solid); border:1px solid var(--border);
+    padding:28px; margin-bottom:24px; border-radius:var(--radius-lg);
+    box-shadow:var(--shadow-sm);
+  }
+  .report-title {
+    font-family:var(--cond); font-size:20px; font-weight:800; letter-spacing:2px;
+    text-transform:uppercase; color:var(--text); margin-bottom:8px;
+  }
+  .report-desc { font-family:var(--mono); font-size:11px; font-weight:500; color:var(--muted); margin-bottom:20px; }
+  .export-btns { display:flex; gap:12px; flex-wrap:wrap; }
+  .btn-excel {
+    background:rgba(16, 185, 129, 0.12); border:1px solid rgba(16, 185, 129, 0.45);
+    color:#059669; border-radius:var(--radius-sm);
+  }
+  .btn-excel:hover { background:rgba(16, 185, 129, 0.2); }
+  .btn-pdf {
+    background:rgba(244, 63, 94, 0.1); border:1px solid rgba(244, 63, 94, 0.4);
+    color:var(--danger); border-radius:var(--radius-sm);
+  }
+  .btn-pdf:hover { background:rgba(244, 63, 94, 0.18); }
+  .report-preview { margin-top:18px; border:1px solid var(--border); overflow:hidden; border-radius:var(--radius-sm); }
+  .preview-row { display:grid; gap:0; }
+  .preview-row.daily-grid   { grid-template-columns: 2fr 2fr 1fr 1fr 1fr 1.5fr 1.5fr 1fr; }
+  .preview-row.monthly-grid { grid-template-columns: 1fr 1.5fr 2fr 1fr 1fr 1fr 1.5fr 1.5fr; }
+  .preview-cell {
+    padding:8px 12px; font-family:var(--mono); font-size:11px; font-weight:500;
+    border-right:1px solid var(--border); border-bottom:1px solid var(--border);
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .preview-cell:last-child { border-right:none; }
+  .preview-header { background:rgba(0,0,0,0.45); color:var(--muted); font-size:9px; font-weight:600; letter-spacing:1px; text-transform:uppercase; }
+  body.light .preview-header { background:rgba(15,23,42,0.06); color:var(--muted); }
+  .preview-row:nth-child(even) .preview-cell { background:rgba(255,255,255,0.02); }
+  body.light .preview-row:nth-child(even) .preview-cell { background:rgba(15,23,42,0.02); }
+
+  /* modal */
+  .modal-overlay {
+    position:fixed; inset:0;
+    background:rgba(4, 6, 12, 0.72);
+    backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+    z-index:500; display:none; align-items:center; justify-content:center; padding:20px;
+  }
+  .modal-overlay.open { display:flex; }
+  .modal {
+    background:var(--surface-solid); border:1px solid var(--border2);
+    padding:32px; width:500px; max-width:95vw; max-height:90vh; overflow-y:auto;
+    position:relative; border-radius:var(--radius-lg);
+    box-shadow:0 24px 80px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.04) inset;
+    animation:modalIn 0.3s ease;
+  }
+  @keyframes modalIn { from { opacity:0; transform:scale(0.96) translateY(8px); } to { opacity:1; transform:none; } }
+  @media (prefers-reduced-motion: reduce) { .modal { animation:none; } }
+  .modal-title {
+    font-family:var(--cond); font-size:22px; font-weight:800; letter-spacing:2px;
+    text-transform:uppercase; color:var(--text); margin-bottom:22px; padding-right:36px;
+  }
+  .modal-close {
+    position:absolute; top:18px; right:18px;
+    width:36px; height:36px; display:flex; align-items:center; justify-content:center;
+    background:rgba(255,255,255,0.06); border:1px solid var(--border); border-radius:var(--radius-sm);
+    color:var(--muted); font-size:18px; line-height:1; cursor:pointer;
+    transition:background 0.2s, color 0.2s, border-color 0.2s;
+  }
+  .modal-close:hover { color:var(--danger); border-color:rgba(255,92,122,0.4); background:rgba(255,92,122,0.08); }
+  .modal-close:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+  .modal.modal-wide { width:min(560px, 100%); }
+  .scans-modal-meta { font-family:var(--mono); font-size:11px; color:var(--muted); margin-bottom:16px; line-height:1.5; }
+  .scans-list { border:1px solid var(--border); border-radius:var(--radius-sm); overflow:hidden; }
+  .scans-list-row {
+    display:grid; grid-template-columns:52px 1fr 100px; gap:10px; align-items:center;
+    padding:10px 14px; font-family:var(--mono); font-size:12px;
+    border-bottom:1px solid var(--border);
+  }
+  .scans-list-row:last-child { border-bottom:none; }
+  .scans-list-row:nth-child(even) { background:rgba(255,255,255,0.02); }
+  body.light .scans-list-row:nth-child(even) { background:rgba(15,23,42,0.03); }
+  .scan-link {
+    background:none; border:none; color:var(--accent); font-family:var(--mono); font-size:13px; font-weight:600;
+    cursor:pointer; text-decoration:underline; text-underline-offset:3px; padding:0;
+    min-height:32px; min-width:32px; display:inline-flex; align-items:center; justify-content:center;
+    position:relative; z-index:2; pointer-events:auto;
+  }
+  .scan-link:hover { filter:brightness(1.1); }
+  .scan-link:focus-visible { outline:2px solid var(--accent); outline-offset:2px; border-radius:4px; }
+  .scan-link:disabled { opacity:0.45; cursor:default; text-decoration:none; color:var(--muted); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-mark">Smart<span>Pay</span></div>
+    <div class="logo-sub">Attendance Control</div>
+  </div>
+  <div class="header-right">
+    <div class="live-badge"><div class="live-dot"></div>LIVE</div>
+    <div class="clock" id="clock">--:--:--</div>
+    <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark mode">🌙</button>
+  </div>
+</header>
+
+<nav>
+  <div class="tab active" onclick="showTab('live')"       id="tab-live">Live Feed</div>
+  <div class="tab"        onclick="showTab('compliance')" id="tab-compliance">Compliance</div>
+  <div class="tab"        onclick="showTab('summary')"    id="tab-summary">Daily Summary</div>
+  <div class="tab"        onclick="showTab('employees')"  id="tab-employees">Employees</div>
+  <div class="tab"        onclick="showTab('reports')"    id="tab-reports">Reports</div>
+  <div class="tab"        onclick="showTab('admin')"      id="tab-admin">⚙ Admin</div>
+</nav>
+
+<main>
+
+  <!-- LIVE FEED -->
+  <div class="panel active" id="panel-live">
+    <div class="stats-grid">
+      <div class="stat-card green"><div class="stat-label">Checked In Today</div><div class="stat-value" id="stat-in">—</div></div>
+      <div class="stat-card blue"><div class="stat-label">Checked Out</div><div class="stat-value" id="stat-out">—</div></div>
+      <div class="stat-card orange"><div class="stat-label">Payments Queued</div><div class="stat-value" id="stat-pay">—</div></div>
+      <div class="stat-card"><div class="stat-label">Total Employees</div><div class="stat-value" id="stat-total">—</div></div>
+    </div>
+    <div class="table-wrap">
+      <div class="table-header">
+        <div class="table-title">Access Events — Today</div>
+        <div class="table-meta" id="live-updated">Refreshing every 10s</div>
+      </div>
+      <table>
+        <thead><tr><th>Employee</th><th>Event</th><th>Time</th><th>Shift</th><th>Payment</th></tr></thead>
+        <tbody id="live-body"><tr><td colspan="5" class="no-data">LOADING...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- COMPLIANCE -->
+  <div class="panel" id="panel-compliance">
+    <div class="filter-row">
+      <span class="filter-label">Date</span>
+      <input type="date" id="compliance-date">
+      <button type="button" class="refresh-btn" onclick="loadCompliance()">↺ Refresh</button>
+    </div>
+    <div class="legend">
+      <span class="filter-label" style="margin-right:4px">Key:</span>
+      <div class="legend-item"><span class="badge badge-ontime">On Time</span>&nbsp;within window</div>
+      <div class="legend-item"><span class="badge badge-late">Late</span>&nbsp;after check-in closes</div>
+      <div class="legend-item"><span class="badge badge-earlyout">Early Out</span>&nbsp;before checkout opens</div>
+      <div class="legend-item"><span class="badge badge-notout">Not Out</span>&nbsp;only one scan</div>
+      <div class="legend-item"><span class="badge badge-leftlate">Left Late</span>&nbsp;after checkout window</div>
+      <div class="legend-item"><span class="badge badge-absent">Absent</span>&nbsp;no events</div>
+    </div>
+    <div class="table-wrap">
+      <div class="table-header">
+        <div class="table-title" id="compliance-title">Shift Compliance</div>
+        <div class="table-meta" id="compliance-count"></div>
+      </div>
+      <table>
+        <thead>
+          <tr><th>Employee</th><th>First Scan</th><th>In Status</th><th>Last Scan</th><th>Out Status</th><th>Scans</th><th>Shift Window</th></tr>
+        </thead>
+        <tbody id="compliance-body"><tr><td colspan="7" class="no-data">LOADING…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- DAILY SUMMARY -->
+  <div class="panel" id="panel-summary">
+    <div class="filter-row">
+      <span class="filter-label">Date</span>
+      <input type="date" id="summary-date">
+      <button type="button" class="refresh-btn" onclick="loadSummary()">↺ Refresh</button>
+    </div>
+    <div class="table-wrap">
+      <div class="table-header">
+        <div class="table-title" id="summary-title">Daily Summary</div>
+        <div class="table-meta" id="summary-count"></div>
+      </div>
+      <table>
+        <thead><tr><th>Employee</th><th>Phone</th><th>Check In</th><th>Check Out</th><th>Scans</th><th>Payment</th></tr></thead>
+        <tbody id="summary-body"><tr><td colspan="6" class="no-data">LOADING…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+
+  <!-- EMPLOYEES -->
+  <div class="panel" id="panel-employees">
+    <div class="panel-toolbar">
+      <h2>Employee Register</h2>
+      <div class="panel-toolbar-actions">
+        <button type="button" class="refresh-btn" onclick="loadEmployeeTab()">↺ Refresh</button>
+        <button type="button" class="btn btn-primary" onclick="openEmpModal()">+ Add Employee</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>ID</th><th>Name</th><th>Phone</th><th>Daily Rate</th><th>Provider</th><th>Shift</th><th>Last swipe</th><th>Actions</th></tr>
+        </thead>
+        <tbody id="emp-tab-body">
+          <tr><td colspan="8" class="no-data">LOADING...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- REPORTS -->
+  <div class="panel" id="panel-reports">
+
+    <!-- Daily Report -->
+    <div class="report-card">
+      <div class="report-title">Daily Attendance Report</div>
+      <div class="report-desc">Check-in / check-out times and compliance for a single day</div>
+      <div class="filter-row">
+        <span class="filter-label">Date</span>
+        <input type="date" id="report-daily-date">
+        <button class="refresh-btn" onclick="previewDailyReport()">↺ Preview</button>
+      </div>
+      <div class="export-btns">
+        <button class="btn btn-excel" onclick="exportReport('daily','excel')">⬇ Export Excel</button>
+        <button class="btn btn-pdf"   onclick="exportReport('daily','pdf')">⬇ Export PDF</button>
+      </div>
+      <div id="daily-preview" class="report-preview" style="display:none;margin-top:16px">
+        <div class="preview-row daily-grid">
+          <div class="preview-cell preview-header">Name</div>
+          <div class="preview-cell preview-header">ID</div>
+          <div class="preview-cell preview-header">Check In</div>
+          <div class="preview-cell preview-header">Check Out</div>
+          <div class="preview-cell preview-header">Scans</div>
+          <div class="preview-cell preview-header">In Status</div>
+          <div class="preview-cell preview-header">Out Status</div>
+          <div class="preview-cell preview-header">Min Late</div>
+        </div>
+        <div id="daily-preview-body"></div>
+      </div>
+    </div>
+
+    <!-- Monthly Report -->
+    <div class="report-card">
+      <div class="report-title">Monthly Attendance Report</div>
+      <div class="report-desc">Full month view — attendance tendencies per employee</div>
+      <div class="filter-row">
+        <span class="filter-label">Month</span>
+        <select id="report-month" style="background:var(--surface);border:1px solid var(--border2);color:var(--text);padding:8px 12px;font-family:var(--mono);font-size:12px;outline:none">
+          <option value="1">January</option><option value="2">February</option>
+          <option value="3">March</option><option value="4">April</option>
+          <option value="5">May</option><option value="6">June</option>
+          <option value="7">July</option><option value="8">August</option>
+          <option value="9">September</option><option value="10">October</option>
+          <option value="11">November</option><option value="12">December</option>
+        </select>
+        <input type="number" id="report-year" style="width:90px" placeholder="2026">
+        <button class="refresh-btn" onclick="previewMonthlyReport()">↺ Preview</button>
+      </div>
+      <div class="export-btns">
+        <button class="btn btn-excel" onclick="exportReport('monthly','excel')">⬇ Export Excel</button>
+        <button class="btn btn-pdf"   onclick="exportReport('monthly','pdf')">⬇ Export PDF</button>
+      </div>
+      <div id="monthly-preview" class="report-preview" style="display:none;margin-top:16px">
+        <div class="preview-row monthly-grid">
+          <div class="preview-cell preview-header">Date</div>
+          <div class="preview-cell preview-header">Name</div>
+          <div class="preview-cell preview-header">ID</div>
+          <div class="preview-cell preview-header">Check In</div>
+          <div class="preview-cell preview-header">Check Out</div>
+          <div class="preview-cell preview-header">Scans</div>
+          <div class="preview-cell preview-header">In Status</div>
+          <div class="preview-cell preview-header">Out Status</div>
+        </div>
+        <div id="monthly-preview-body"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- EMPLOYEE MODAL -->
+  <div class="modal-overlay" id="emp-modal-overlay">
+    <div class="modal">
+      <button class="modal-close" onclick="closeEmpModal()">✕</button>
+      <div class="modal-title" id="emp-modal-title">Add Employee</div>
+
+      <!-- ID field with search dropdown -->
+      <div class="form-group">
+        <label class="form-label">Employee ID <span style="color:var(--muted);font-size:9px">(type to search existing)</span></label>
+        <div class="emp-search-wrap">
+          <input type="text" id="modal-emp-id" style="width:100%" placeholder="Type ID or search name..."
+            oninput="empIdSearch(this.value)" autocomplete="off">
+          <div class="emp-dropdown" id="emp-id-dropdown"></div>
+        </div>
+      </div>
+
+      <div class="form-grid-2">
+        <div class="form-group">
+          <label class="form-label">First Name</label>
+          <input type="text" id="modal-emp-first" style="width:100%">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Last Name</label>
+          <input type="text" id="modal-emp-last" style="width:100%">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Phone Number</label>
+        <input type="text" id="modal-emp-phone" style="width:100%" placeholder="0712345678">
+      </div>
+      <div class="form-grid-2">
+        <div class="form-group">
+          <label class="form-label">Daily Rate (TZS)</label>
+          <input type="number" id="modal-emp-rate" style="width:100%" placeholder="15000">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Provider</label>
+          <input type="text" id="modal-emp-provider" style="width:100%" placeholder="vodacom">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Shift override <span style="color:var(--muted);font-weight:400;font-size:10px">(optional — empty = company default)</span></label>
+        <select id="modal-emp-shift" style="width:100%;background:var(--surface);border:1px solid var(--border2);color:var(--text);padding:9px 12px;font-family:var(--mono);font-size:12px;outline:none">
+          <option value="">— Company default —</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:6px">
+        <button class="btn btn-primary" onclick="saveEmpModal()" style="flex:1;padding:12px">Save Employee</button>
+        <button class="btn btn-secondary" onclick="closeEmpModal()" style="padding:12px 20px">Cancel</button>
+      </div>
+      <div id="modal-emp-error" style="color:var(--danger);font-family:var(--mono);font-size:11px;margin-top:10px;"></div>
+    </div>
+  </div>
+
+  <!-- Daily summary: scan list -->
+  <div class="modal-overlay" id="scans-modal-overlay">
+    <div class="modal modal-wide">
+      <button type="button" class="modal-close" onclick="closeScansModal()">✕</button>
+      <div class="modal-title" id="scans-modal-title">Scans</div>
+      <div class="scans-modal-meta" id="scans-modal-meta"></div>
+      <div id="scans-modal-body" class="scans-list"></div>
+    </div>
+  </div>
+
+  <!-- ADMIN -->
+  <div class="panel" id="panel-admin">
+    <div id="admin-lock">
+      <div class="admin-lock">
+        <div class="admin-lock-title">// Admin Access Required</div>
+        <div class="input-row">
+          <input type="password" id="admin-pw-input" placeholder="Enter admin password" style="width:260px">
+          <button class="btn btn-primary" onclick="adminLogin()">Unlock</button>
+        </div>
+        <div id="admin-pw-error" style="color:var(--danger);font-family:var(--mono);font-size:11px;margin-top:12px;"></div>
+      </div>
+    </div>
+
+    <div id="admin-content" style="display:none">
+
+      <!-- Shift Config -->
+      <div class="table-wrap" style="padding:22px;margin-bottom:20px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:10px">
+          <div class="section-title" style="margin:0;padding:0;border:none">Shift Configuration</div>
+          <div style="display:flex;gap:10px;align-items:center">
+            <button type="button" class="refresh-btn" onclick="loadShiftConfig()">↺ Refresh</button>
+            <button type="button" class="refresh-btn" onclick="adminLogout()" title="Clear admin session on this tab">Sign out</button>
+          </div>
+        </div>
+        <div id="shift-config-area">Loading…</div>
+      </div>
+
+      <!-- Add Shift + Employee -->
+      <div class="admin-grid" style="margin-bottom:20px">
+        <div class="table-wrap" style="padding:22px">
+          <div class="section-title">Add New Shift</div>
+          <div class="form-group">
+            <label class="form-label">Shift Name</label>
+            <input type="text" id="new-shift-name" style="width:100%" placeholder="Night Shift">
+          </div>
+          <div class="form-grid-2">
+            <div class="form-group"><label class="form-label">Check-in Opens</label><input type="time" id="new-ci-start" value="06:00" style="width:100%"></div>
+            <div class="form-group"><label class="form-label">Check-in Closes</label><input type="time" id="new-ci-end" value="09:00" style="width:100%"></div>
+            <div class="form-group"><label class="form-label">Check-out Opens</label><input type="time" id="new-co-start" value="15:00" style="width:100%"></div>
+            <div class="form-group"><label class="form-label">Check-out Closes</label><input type="time" id="new-co-end" value="19:00" style="width:100%"></div>
+          </div>
+          <button class="btn btn-primary" onclick="addShift()" style="width:100%;padding:12px">Add Shift</button>
+        </div>
+
+        <div class="table-wrap" style="padding:22px">
+          <div class="section-title">Add / Update Employee</div>
+          <div class="form-group"><label class="form-label">Employee ID</label><input type="text" id="emp-id" style="width:100%" placeholder="EMP001"></div>
+          <div class="form-grid-2">
+            <div class="form-group"><label class="form-label">First Name</label><input type="text" id="emp-first" style="width:100%"></div>
+            <div class="form-group"><label class="form-label">Last Name</label><input type="text" id="emp-last" style="width:100%"></div>
+          </div>
+          <div class="form-group"><label class="form-label">Phone Number</label><input type="text" id="emp-phone" style="width:100%" placeholder="0712345678"></div>
+          <div class="form-grid-2">
+            <div class="form-group"><label class="form-label">Daily Rate (TZS)</label><input type="number" id="emp-rate" style="width:100%" placeholder="15000"></div>
+            <div class="form-group"><label class="form-label">Provider</label><input type="text" id="emp-provider" style="width:100%" placeholder="vodacom"></div>
+          </div>
+          <button class="btn btn-primary" onclick="saveEmployee()" style="width:100%;padding:12px">Save Employee</button>
+        </div>
+      </div>
+
+      <!-- Employee List -->
+      <div class="table-wrap">
+        <div class="table-header">
+          <div class="table-title">Employee Register</div>
+          <button class="refresh-btn" onclick="loadEmployees()">↺ Refresh</button>
+        </div>
+        <table>
+          <thead><tr><th>ID</th><th>Name</th><th>Phone</th><th>Daily Rate</th><th>Provider</th></tr></thead>
+          <tbody id="emp-body"><tr><td colspan="5" class="no-data">LOADING...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</main>
+<div class="toast" id="toast"></div>
+
+<script>
+const BASE = '';
+const ADMIN_SESSION_KEY = 'smartpay-admin-session';
+let adminToken = '';
+
+function unlockAdmin(pw) {
+  adminToken = pw;
+  try { sessionStorage.setItem(ADMIN_SESSION_KEY, pw); } catch (e) {}
+  document.getElementById('admin-lock').style.display = 'none';
+  document.getElementById('admin-content').style.display = 'block';
+  document.getElementById('admin-pw-error').textContent = '';
+  loadShiftConfig(); loadEmployees(); loadEmployeeTab();
+}
+
+function adminLogout() {
+  adminToken = '';
+  try { sessionStorage.removeItem(ADMIN_SESSION_KEY); } catch (e) {}
+  document.getElementById('admin-lock').style.display = '';
+  document.getElementById('admin-content').style.display = 'none';
+  const inp = document.getElementById('admin-pw-input');
+  if (inp) inp.value = '';
+  document.getElementById('admin-pw-error').textContent = '';
+  loadEmployeeTab();
+  toast('Admin session ended');
+}
+
+async function restoreAdminSession() {
+  let saved = '';
+  try { saved = sessionStorage.getItem(ADMIN_SESSION_KEY) || ''; } catch (e) {}
+  if (!saved) return;
+  try {
+    const r = await fetch(BASE + '/api/admin/shifts', { headers: { 'x-admin-token': saved } });
+    if (!r.ok) throw new Error('unauthorized');
+    unlockAdmin(saved);
+  } catch (e) {
+    adminToken = '';
+    try { sessionStorage.removeItem(ADMIN_SESSION_KEY); } catch (err) {}
+  }
+}
+
+function updateClock() {
+  document.getElementById('clock').textContent = new Date().toLocaleTimeString('en-GB',{hour12:false});
+}
+setInterval(updateClock,1000); updateClock();
+
+function showTab(name) {
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  document.getElementById('tab-'+name).classList.add('active');
+  if (name === 'employees') loadEmployeeTab();
+  if (name === 'compliance') loadCompliance();
+  if (name === 'summary') loadSummary();
+  if (name === 'reports') {
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('report-daily-date').value = today;
+    document.getElementById('report-year').value = new Date().getFullYear();
+    document.getElementById('report-month').value = new Date().getMonth() + 1;
+  }
+}
+
+function toast(msg,ok=true) {
+  const el=document.getElementById('toast');
+  el.textContent=msg;
+  el.style.borderColor=ok?'var(--accent)':'var(--danger)';
+  el.style.color=ok?'var(--accent)':'var(--danger)';
+  el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),3000);
+}
+
+function fmtTime(ts) {
+  if(!ts) return '—';
+  return new Date(ts).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+function fmtName(row) {
+  const dn = row.display_name != null && String(row.display_name).trim() !== '' ? String(row.display_name).trim() : '';
+  if (dn) return dn;
+  const full = ((row.firstname || '') + ' ' + (row.lastname || '')).trim();
+  if (full) return full;
+  const al = row.attlog_name != null && String(row.attlog_name).trim() !== '' ? String(row.attlog_name).trim() : '';
+  if (al) return al;
+  return row.employee_id || row.id || '—';
+}
+
+function complianceBadge(status) {
+  if(!status) return '<span class="badge badge-ignored">—</span>';
+  const map={'ON TIME':'badge-ontime','LATE':'badge-late','EARLY OUT':'badge-earlyout','NOT OUT':'badge-notout','ABSENT':'badge-absent','LEFT LATE':'badge-leftlate'};
+  return `<span class="badge ${map[status]||'badge-ignored'}">${status}</span>`;
+}
+
+function deltaLabel(minutes, type) {
+  if(minutes===null||minutes===undefined) return '';
+  const m=parseFloat(minutes);
+  if(type==='late') return m<=0?'<span class="delta-ok">—</span>':`<span class="delta-late">+${Math.round(m)}m late</span>`;
+  if(type==='early') {
+    if(m===0) return '<span class="delta-ok">—</span>';
+    if(m>0)   return `<span class="delta-early">-${Math.round(m)}m early</span>`;
+    if(m<0)   return `<span style="color:#b366ff;font-family:var(--mono);font-size:11px">+${Math.round(Math.abs(m))}m late out</span>`;
+  }
+  return '';
+}
+
+async function loadStats() {
+  try {
+    const j=await(await fetch(BASE+'/api/stats')).json();
+    if(!j.success) return;
+    document.getElementById('stat-in').textContent    = j.data.checked_in||0;
+    document.getElementById('stat-out').textContent   = j.data.checked_out||0;
+    document.getElementById('stat-pay').textContent   = j.data.payments_queued||0;
+    document.getElementById('stat-total').textContent = j.data.total_employees||0;
+  } catch(e){}
+}
+
+async function loadLive() {
+  try {
+    const j=await(await fetch(BASE+'/api/attendance/live')).json();
+    const tbody=document.getElementById('live-body');
+    if(!j.success||!j.data.length){tbody.innerHTML='<tr><td colspan="5" class="no-data">NO EVENTS TODAY</td></tr>';return;}
+    tbody.innerHTML=j.data.map(row=>{
+      const bc=row.event_type==='CHECK_IN'?'badge-in':row.event_type==='CHECK_OUT'?'badge-out':'badge-ignored';
+      const pay=row.payment_triggered?'<span class="badge badge-ontime">Queued</span>':'<span class="badge badge-ignored">—</span>';
+      return `<tr>
+        <td><div class="emp-name">${fmtName(row)}</div><div class="emp-id">${row.employee_id}</div></td>
+        <td><span class="badge ${bc}">${row.event_type.replace('_',' ')}</span></td>
+        <td><span class="time-val">${fmtTime(row.raw_event_time)}</span></td>
+        <td><span class="emp-id">Shift ${row.shift_id||1}</span></td>
+        <td>${pay}</td>
+      </tr>`;
+    }).join('');
+    document.getElementById('live-updated').textContent='Updated '+new Date().toLocaleTimeString('en-GB');
+  } catch(e){document.getElementById('live-body').innerHTML='<tr><td colspan="5" class="no-data">CONNECTION ERROR</td></tr>';}
+}
+
+function todayIsoDate() {
+  return new Date().toISOString().split('T')[0];
+}
+
+async function loadCompliance() {
+  const el = document.getElementById('compliance-date');
+  let d = el.value;
+  if (!d) {
+    d = todayIsoDate();
+    el.value = d;
+  }
+  try {
+    const j=await(await fetch(BASE+'/api/attendance/compliance?date='+d)).json();
+    document.getElementById('compliance-title').textContent='Compliance — '+d;
+    const tbody=document.getElementById('compliance-body');
+    if(!j.success||!j.data.length){
+      document.getElementById('compliance-count').textContent='0 employees';
+      tbody.innerHTML='<tr><td colspan="7" class="no-data">NO DATA FOR THIS DATE</td></tr>';return;
+    }
+    document.getElementById('compliance-count').textContent=j.data.length+' employees';
+    tbody.innerHTML=j.data.map(row=>`<tr>
+      <td><div class="emp-name">${fmtName(row)}</div><div class="emp-id">${row.employee_id}</div></td>
+      <td>
+        <span class="time-val">${fmtTime(row.check_in)}</span>
+        <div style="margin-top:3px">${deltaLabel(row.minutes_late,'late')}</div>
+      </td>
+      <td>${complianceBadge(row.checkin_status)}</td>
+      <td>
+        <span class="time-val">${fmtTime(row.check_out || row.last_scan)}</span>
+        <div style="margin-top:3px">${deltaLabel(row.minutes_early_out,'early')}</div>
+      </td>
+      <td>${complianceBadge(row.checkout_status)}</td>
+      <td><span class="emp-id" style="font-size:13px;color:var(--text)">${row.total_scans}</span></td>
+      <td>
+        <div class="emp-id">${row.shift_name||'—'}</div>
+        <div class="emp-id" style="font-size:10px;margin-top:3px;color:var(--muted)">
+          In: ${row.checkin_start||'—'}–${row.checkin_end||'—'} &nbsp;|&nbsp; Out: ${row.checkout_start||'—'}–${row.checkout_end||'—'}
+        </div>
+      </td>
+    </tr>`).join('');
+  } catch(e){toast('Failed to load compliance',false);}
+}
+
+async function loadSummary() {
+  const el = document.getElementById('summary-date');
+  let d = el.value;
+  if (!d) {
+    d = todayIsoDate();
+    el.value = d;
+  }
+  try {
+    const j=await(await fetch(BASE+'/api/attendance/summary?date='+d)).json();
+    document.getElementById('summary-title').textContent='Summary — '+d;
+    const tbody=document.getElementById('summary-body');
+    if(!j.success||!j.data.length){
+      document.getElementById('summary-count').textContent='0 employees';
+      tbody.innerHTML='<tr><td colspan="6" class="no-data">NO DATA FOR THIS DATE</td></tr>';return;
+    }
+    document.getElementById('summary-count').textContent=j.data.length+' employees';
+    tbody.innerHTML=j.data.map(row=>{
+      const pay=row.payment_triggered?'<span class="badge badge-ontime">Queued</span>':'<span class="badge badge-pending">Pending</span>';
+      const nm = fmtName(row);
+      const n = Number(row.total_events) || 0;
+      const eidAttr = encodeURIComponent(String(row.employee_id));
+      const nameAttr = encodeURIComponent(nm);
+      const scansCell = n > 0
+        ? `<button type="button" class="scan-link" data-scan-eid="${eidAttr}" data-scan-name="${nameAttr}" title="View all scans">${n}</button>`
+        : `<span class="emp-id">0</span>`;
+      return `<tr>
+        <td><div class="emp-name">${nm}</div><div class="emp-id">${row.employee_id}</div></td>
+        <td><span class="time-val">${row.phonenumber||'—'}</span></td>
+        <td><span class="time-val">${fmtTime(row.check_in)}</span></td>
+        <td><span class="time-val">${fmtTime(row.check_out)}</span></td>
+        <td>${scansCell}</td>
+        <td>${pay}</td>
+      </tr>`;
+    }).join('');
+  } catch(e){toast('Failed to load summary',false);}
+}
+
+function closeScansModal() {
+  document.getElementById('scans-modal-overlay').classList.remove('open');
+}
+
+async function openDailyScansModal(employeeId, displayName) {
+  const dateEl = document.getElementById('summary-date');
+  const d = dateEl.value || todayIsoDate();
+  const overlay = document.getElementById('scans-modal-overlay');
+  const titleEl = document.getElementById('scans-modal-title');
+  const metaEl = document.getElementById('scans-modal-meta');
+  const bodyEl = document.getElementById('scans-modal-body');
+  titleEl.textContent = displayName || String(employeeId);
+  metaEl.textContent = String(employeeId) + ' · ' + d;
+  bodyEl.innerHTML = '<div class="no-data" style="padding:20px">Loading…</div>';
+  overlay.classList.add('open');
+  try {
+    const url = BASE + '/api/attendance/scans?date=' + encodeURIComponent(d) + '&employee_id=' + encodeURIComponent(employeeId);
+    const j = await (await fetch(url)).json();
+    if (!j.success) {
+      bodyEl.innerHTML = '<div class="no-data" style="padding:20px">' + (j.error || 'Could not load scans') + '</div>';
+      return;
+    }
+    if (!j.data || !j.data.length) {
+      bodyEl.innerHTML = '<div class="no-data" style="padding:20px">No scans for this date</div>';
+      return;
+    }
+    bodyEl.innerHTML = j.data.map((row, i) => {
+      const et = row.event_type || 'SCAN';
+      const bc = et === 'CHECK_IN' ? 'badge-in' : et === 'CHECK_OUT' ? 'badge-out' : 'badge-ignored';
+      const label = String(et).replace(/_/g, ' ');
+      return `<div class="scans-list-row">
+        <span class="emp-id">#${i + 1}</span>
+        <span class="time-val">${fmtTime(row.raw_event_time)}</span>
+        <span><span class="badge ${bc}">${label}</span>${row.payment_triggered ? ' <span class="emp-id" style="font-size:10px">pay</span>' : ''}</span>
+      </div>`;
+    }).join('');
+  } catch (e) {
+    bodyEl.innerHTML = '<div class="no-data" style="padding:20px">Connection error</div>';
+  }
+}
+
+document.getElementById('scans-modal-overlay').addEventListener('click', function (e) {
+  if (e.target === this) closeScansModal();
+});
+
+document.getElementById('summary-body').addEventListener('click', function (e) {
+  const el = e.target.nodeType === Node.TEXT_NODE ? e.target.parentElement : e.target;
+  const btn = el && el.closest ? el.closest('button.scan-link') : null;
+  if (!btn || !btn.dataset.scanEid) return;
+  e.preventDefault();
+  e.stopPropagation();
+  const id = decodeURIComponent(btn.dataset.scanEid);
+  const name = decodeURIComponent(btn.dataset.scanName || '');
+  openDailyScansModal(id, name);
+});
+
+function adminLogin() {
+  const pw=document.getElementById('admin-pw-input').value;
+  fetch(BASE+'/api/admin/shifts',{headers:{'x-admin-token':pw}}).then(r=>{
+    if(r.ok){
+      unlockAdmin(pw);
+    } else {
+      document.getElementById('admin-pw-error').textContent='INCORRECT PASSWORD';
+    }
+  });
+}
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Enter'||!document.getElementById('panel-admin').classList.contains('active')) return;
+  if(adminToken) return;
+  adminLogin();
+});
+
+async function saveGlobalDefaultShift() {
+  const sel = document.getElementById('global-default-shift-select');
+  if (!sel || !sel.value) { toast('Choose a shift', false); return; }
+  const r = await fetch(BASE + '/api/admin/settings/default-shift', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', 'x-admin-token': adminToken },
+    body: JSON.stringify({ shift_id: parseInt(sel.value, 10) }),
+  });
+  const j = await r.json();
+  toast(j.success ? 'Company default shift updated' : (j.error || 'Failed'), j.success);
+  if (j.success) loadShiftConfig();
+}
+
+async function loadShiftConfig() {
+  const j=await(await fetch(BASE+'/api/admin/shifts',{headers:{'x-admin-token':adminToken}})).json();
+  if(!j.success) return;
+  const defId = j.default_shift_id != null ? Number(j.default_shift_id) : 1;
+  const globalPanel = `
+    <div class="shift-window" style="margin-bottom:20px;border-color:rgba(46,230,168,0.28)">
+      <div class="shift-window-name" style="font-size:17px;letter-spacing:1px">Company default shift</div>
+      <p class="emp-id" style="margin-top:10px;line-height:1.55;max-width:52rem">Everyone without an individual shift uses this for compliance, reports, and new swipes. Assign a different shift on an employee only when they need an override.</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:14px">
+        <select id="global-default-shift-select" style="min-width:220px;max-width:100%;background:var(--surface);border:1px solid var(--border2);color:var(--text);padding:10px 12px;font-family:var(--mono);font-size:12px;outline:none;border-radius:var(--radius-sm)">
+          ${(j.data && j.data.length)
+            ? j.data.map(s=>`<option value="${s.id}">${s.shift_name}</option>`).join('')
+            : '<option value="">Add a shift below first</option>'}
+        </select>
+        <button type="button" class="btn btn-primary btn-sm" onclick="saveGlobalDefaultShift()">Save default</button>
+      </div>
+    </div>`;
+  const gselAfter = () => {
+    const gsel = document.getElementById('global-default-shift-select');
+    if (gsel && j.data && j.data.length) gsel.value = String(defId);
+  };
+  document.getElementById('shift-config-area').innerHTML = globalPanel + j.data.map(s=>`
+    <div class="shift-window">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+        <div class="shift-window-name">${s.shift_name}${Number(s.id)===defId ? ' <span class="badge badge-ontime" style="font-size:9px;vertical-align:middle">DEFAULT</span>' : ''}</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="badge ${s.active?'badge-ontime':'badge-ignored'}">${s.active?'Active':'Inactive'}</span>
+          <button class="btn btn-secondary btn-sm" onclick="toggleEdit(${s.id})">Edit</button>
+        </div>
+      </div>
+
+      <div class="shift-timeline">
+        <div class="shift-segment seg-before">Before</div>
+        <div class="shift-segment seg-checkin">IN<br>${s.checkin_start}–${s.checkin_end}</div>
+        <div class="shift-segment seg-work">— work period —</div>
+        <div class="shift-segment seg-checkout">OUT<br>${s.checkout_start}–${s.checkout_end}</div>
+        <div class="shift-segment seg-after">After</div>
+      </div>
+
+      <div id="shift-read-${s.id}" class="shift-times">
+        <div>
+          <div class="form-label">Check-in window</div>
+          <div class="time-val" style="font-size:14px">${s.checkin_start} → ${s.checkin_end}</div>
+          <div class="emp-id" style="margin-top:4px">Swipe before ${s.checkin_end} = ON TIME &nbsp;|&nbsp; After = LATE</div>
+        </div>
+        <div>
+          <div class="form-label">Check-out window</div>
+          <div class="time-val" style="font-size:14px">${s.checkout_start} → ${s.checkout_end}</div>
+          <div class="emp-id" style="margin-top:4px">Swipe after ${s.checkout_start} = ON TIME &nbsp;|&nbsp; Before = EARLY OUT</div>
+        </div>
+      </div>
+
+      <div id="shift-edit-${s.id}" style="display:none">
+        <div class="shift-edit-grid">
+          <div><label class="form-label">Check-in Opens</label><input type="time" id="ci_start_${s.id}" value="${s.checkin_start}" style="width:100%"></div>
+          <div><label class="form-label">Check-in Closes</label><input type="time" id="ci_end_${s.id}" value="${s.checkin_end}" style="width:100%"></div>
+          <div><label class="form-label">Check-out Opens</label><input type="time" id="co_start_${s.id}" value="${s.checkout_start}" style="width:100%"></div>
+          <div><label class="form-label">Check-out Closes</label><input type="time" id="co_end_${s.id}" value="${s.checkout_end}" style="width:100%"></div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <button class="btn btn-primary btn-sm" onclick="saveShift(${s.id})">Save</button>
+          <button class="btn btn-secondary btn-sm" onclick="toggleEdit(${s.id})">Cancel</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+  gselAfter();
+}
+
+function toggleEdit(id) {
+  const r=document.getElementById('shift-read-'+id);
+  const e=document.getElementById('shift-edit-'+id);
+  const show=e.style.display==='none';
+  e.style.display=show?'block':'none';
+  r.style.display=show?'none':'grid';
+}
+
+async function saveShift(id) {
+  const body={
+    checkin_start: document.getElementById('ci_start_'+id).value,
+    checkin_end:   document.getElementById('ci_end_'+id).value,
+    checkout_start:document.getElementById('co_start_'+id).value,
+    checkout_end:  document.getElementById('co_end_'+id).value,
+  };
+  const j=await(await fetch(BASE+'/api/admin/shifts/'+id,{method:'PUT',headers:{'Content-Type':'application/json','x-admin-token':adminToken},body:JSON.stringify(body)})).json();
+  toast(j.success?'Shift saved ✓':'Error: '+j.error,j.success);
+  if(j.success) loadShiftConfig();
+}
+
+async function addShift() {
+  const body={
+    shift_name:    document.getElementById('new-shift-name').value.trim(),
+    checkin_start: document.getElementById('new-ci-start').value,
+    checkin_end:   document.getElementById('new-ci-end').value,
+    checkout_start:document.getElementById('new-co-start').value,
+    checkout_end:  document.getElementById('new-co-end').value,
+  };
+  if(!body.shift_name){toast('Shift name required',false);return;}
+  const j=await(await fetch(BASE+'/api/admin/shifts',{method:'POST',headers:{'Content-Type':'application/json','x-admin-token':adminToken},body:JSON.stringify(body)})).json();
+  toast(j.success?'Shift added ✓':'Error: '+j.error,j.success);
+  if(j.success){document.getElementById('new-shift-name').value='';loadShiftConfig();}
+}
+
+async function saveEmployee() {
+  const body={
+    id:         document.getElementById('emp-id').value.trim(),
+    firstname:  document.getElementById('emp-first').value.trim(),
+    lastname:   document.getElementById('emp-last').value.trim(),
+    phonenumber:document.getElementById('emp-phone').value.trim(),
+    daily_rate: parseFloat(document.getElementById('emp-rate').value)||0,
+    provider:   document.getElementById('emp-provider').value.trim(),
+  };
+  if(!body.id){toast('Employee ID required',false);return;}
+  const j=await(await fetch(BASE+'/api/admin/employees',{method:'POST',headers:{'Content-Type':'application/json','x-admin-token':adminToken},body:JSON.stringify(body)})).json();
+  toast(j.success?'Employee saved ✓':'Error: '+j.error,j.success);
+  if(j.success) loadEmployees();
+}
+
+async function loadEmployees() {
+  const j=await(await fetch(BASE+'/api/admin/employees',{headers:{'x-admin-token':adminToken}})).json();
+  const tbody=document.getElementById('emp-body');
+  if(!j.success||!j.data.length){tbody.innerHTML='<tr><td colspan="5" class="no-data">NO EMPLOYEES REGISTERED</td></tr>';return;}
+  tbody.innerHTML=j.data.map(e=>`<tr>
+    <td><span class="emp-id">${e.id}</span></td>
+    <td class="emp-name">${e.firstname||''} ${e.lastname||''}</td>
+    <td><span class="time-val">${e.phonenumber||'—'}</span></td>
+    <td><span class="time-val">${Number(e.daily_rate||0).toLocaleString()} TZS</span></td>
+    <td><span class="emp-id">${e.provider||'—'}</span></td>
+  </tr>`).join('');
+}
+
+
+
+// ── EMPLOYEES TAB ─────────────────────────────────────────
+let allShifts = [];
+
+async function loadEmployeeTab() {
+  allShifts = [];
+  if (adminToken) {
+    const sr = await fetch(BASE+'/api/admin/shifts', {headers:{'x-admin-token':adminToken}});
+    if (sr.ok) {
+      const sj = await sr.json();
+      if (sj.success) allShifts = sj.data;
+    }
+  }
+
+  const tbody = document.getElementById('emp-tab-body');
+  let j;
+  try {
+    const r = await fetch(BASE+'/api/employees/from-attlog');
+    j = await r.json();
+  } catch (e) {
+    tbody.innerHTML='<tr><td colspan="8" class="no-data">CONNECTION ERROR</td></tr>';
+    return;
+  }
+  if (!j.success || !j.data.length) {
+    tbody.innerHTML='<tr><td colspan="8" class="no-data">NO EMPLOYEES IN ATTLOG YET — SWIPES WILL APPEAR HERE</td></tr>';
+    return;
+  }
+  tbody.innerHTML = j.data.map(e => {
+    const shift = allShifts.find(s => Number(s.id) === Number(e.shift_id));
+    const displayName =
+      (e.display_name && String(e.display_name).trim()) ||
+      `${e.firstname||''} ${e.lastname||''}`.trim() ||
+      (e.attlog_name && String(e.attlog_name).trim()) ||
+      '—';
+    const lastSwipe = e.last_swipe_at ? fmtTime(e.last_swipe_at) : '—';
+    const swipeMeta = e.swipe_count != null ? `<span class="emp-id" style="display:block;margin-top:4px">${e.swipe_count} swipes in attlog</span>` : '';
+    const actions = adminToken
+      ? `<button type="button" class="btn btn-secondary btn-sm" onclick='editEmployee(${JSON.stringify(e.id)})'>Edit</button>
+         <button type="button" class="btn btn-sm" style="background:transparent;border:1px solid var(--danger);color:var(--danger);margin-left:6px" onclick='deleteEmployee(${JSON.stringify(e.id)}, ${JSON.stringify(displayName)})'>Delete</button>`
+      : '<span class="emp-id">Unlock Admin to edit</span>';
+    return `<tr>
+      <td><span class="emp-id">${e.id}</span>${swipeMeta}</td>
+      <td class="emp-name">${displayName}</td>
+      <td><span class="time-val">${e.phonenumber||'—'}</span></td>
+      <td><span class="time-val">${e.daily_rate != null && e.daily_rate !== '' ? Number(e.daily_rate).toLocaleString() + ' TZS' : '—'}</span></td>
+      <td><span class="emp-id">${e.provider||'—'}</span></td>
+      <td>${
+        shift
+          ? (e.shift_is_default === true
+              ? `<span class="badge badge-ontime">${shift.shift_name}</span><div class="emp-id" style="margin-top:4px">company default</div>`
+              : `<span class="badge badge-ontime">${shift.shift_name}</span><div class="emp-id" style="margin-top:4px">override</div>`)
+          : '<span class="badge badge-ignored">—</span>'
+      }</td>
+      <td><span class="time-val">${lastSwipe}</span></td>
+      <td>${actions}</td>
+    </tr>`;
+  }).join('');
+}
+
+function openEmpModal(prefillId) {
+  if (!adminToken) {
+    toast('Unlock Admin tab first to add or edit employees', false);
+    return;
+  }
+  // Reset form
+  ['modal-emp-id','modal-emp-first','modal-emp-last','modal-emp-phone','modal-emp-rate','modal-emp-provider'].forEach(id=>{
+    document.getElementById(id).value='';
+  });
+  document.getElementById('modal-emp-shift').value='';
+  document.getElementById('modal-emp-error').textContent='';
+  document.getElementById('emp-modal-title').textContent = 'Add Employee';
+  // Populate shift dropdown
+  const sel = document.getElementById('modal-emp-shift');
+  sel.innerHTML='<option value="">— Company default —</option>';
+  allShifts.forEach(s=>{
+    sel.innerHTML+=`<option value="${s.id}">${s.shift_name}</option>`;
+  });
+  if(prefillId) document.getElementById('modal-emp-id').value = prefillId;
+  document.getElementById('emp-modal-overlay').classList.add('open');
+  document.getElementById('modal-emp-id').focus();
+}
+
+function closeEmpModal() {
+  document.getElementById('emp-modal-overlay').classList.remove('open');
+  document.getElementById('emp-id-dropdown').classList.remove('open');
+}
+
+// Close modal on overlay click
+document.getElementById('emp-modal-overlay').addEventListener('click', function(e){
+  if(e.target===this) closeEmpModal();
+});
+
+async function editEmployee(id) {
+  const r = await fetch(BASE+'/api/admin/employees/'+encodeURIComponent(id), {headers:{'x-admin-token':adminToken}});
+  const j = await r.json();
+  if (!j.success) {
+    toast('Failed to load employee: ' + (j.error || r.status), false);
+    return;
+  }
+  const e = j.data;
+  openEmpModal();
+  document.getElementById('emp-modal-title').textContent = j.from_attlog_stub
+    ? 'Add to HR register (from attlog)'
+    : 'Edit Employee';
+  document.getElementById('modal-emp-id').value       = e.id;
+  document.getElementById('modal-emp-first').value    = e.firstname||'';
+  document.getElementById('modal-emp-last').value     = e.lastname||'';
+  document.getElementById('modal-emp-phone').value    = e.phonenumber||'';
+  document.getElementById('modal-emp-rate').value     = e.daily_rate != null ? e.daily_rate : '';
+  document.getElementById('modal-emp-provider').value = e.provider||'';
+  document.getElementById('modal-emp-shift').value    = e.shift_id||'';
+}
+
+async function deleteEmployee(id, name) {
+  if(!confirm(`Delete employee ${name} (${id})?`)) return;
+  const r = await fetch(BASE+'/api/admin/employees/'+encodeURIComponent(id),{method:'DELETE',headers:{'x-admin-token':adminToken}});
+  const j = await r.json();
+  if (!j.success) {
+    toast('Error: ' + (j.error || r.status), false);
+    return;
+  }
+  if (j.only_in_attlog) {
+    toast(j.message || 'Only in attlog — not removed from device logs.', true);
+    return;
+  }
+  toast(j.noop ? 'Nothing to delete (not in register).' : 'Employee deleted', true);
+  loadEmployeeTab();
+}
+
+// Search dropdown
+let empSearchTimer = null;
+async function empIdSearch(val) {
+  clearTimeout(empSearchTimer);
+  const dd = document.getElementById('emp-id-dropdown');
+  if(!val || val.length < 1){dd.classList.remove('open');return;}
+  empSearchTimer = setTimeout(async()=>{
+    const r = await fetch(BASE+'/api/employees/search?q='+encodeURIComponent(val));
+    const j = await r.json();
+    if(!j.success||!j.data.length){dd.classList.remove('open');return;}
+    dd.innerHTML = j.data.map(e=>`
+      <div class="emp-dropdown-item" onclick="selectEmployeeFromDropdown('${e.id}','${e.firstname||''}','${e.lastname||''}','${e.phonenumber||''}','${e.daily_rate||0}','${e.provider||''}','${e.shift_id||''}')">
+        <div>${e.firstname||''} ${e.lastname||''}</div>
+        <div class="emp-dropdown-id">${e.id}</div>
+      </div>
+    `).join('');
+    dd.classList.add('open');
+  }, 250);
+}
+
+function selectEmployeeFromDropdown(id,first,last,phone,rate,provider,shiftId) {
+  document.getElementById('modal-emp-id').value       = id;
+  document.getElementById('modal-emp-first').value    = first;
+  document.getElementById('modal-emp-last').value     = last;
+  document.getElementById('modal-emp-phone').value    = phone;
+  document.getElementById('modal-emp-rate').value     = rate;
+  document.getElementById('modal-emp-provider').value = provider;
+  document.getElementById('modal-emp-shift').value    = shiftId||'';
+  document.getElementById('emp-modal-title').textContent = 'Edit Employee';
+  document.getElementById('emp-id-dropdown').classList.remove('open');
+}
+
+// Close dropdown on outside click
+document.addEventListener('click', e=>{
+  const dd = document.getElementById('emp-id-dropdown');
+  if(dd && !dd.contains(e.target) && e.target.id !== 'modal-emp-id') dd.classList.remove('open');
+});
+
+async function saveEmpModal() {
+  const body = {
+    id:          document.getElementById('modal-emp-id').value.trim(),
+    firstname:   document.getElementById('modal-emp-first').value.trim(),
+    lastname:    document.getElementById('modal-emp-last').value.trim(),
+    phonenumber: document.getElementById('modal-emp-phone').value.trim(),
+    daily_rate:  parseFloat(document.getElementById('modal-emp-rate').value)||0,
+    provider:    document.getElementById('modal-emp-provider').value.trim(),
+    shift_id:    document.getElementById('modal-emp-shift').value||null,
+  };
+  if(!body.id){document.getElementById('modal-emp-error').textContent='Employee ID required';return;}
+  const r = await fetch(BASE+'/api/admin/employees',{method:'POST',headers:{'Content-Type':'application/json','x-admin-token':adminToken},body:JSON.stringify(body)});
+  const j = await r.json();
+  if(j.success){
+    toast('Employee saved ✓');
+    closeEmpModal();
+    loadEmployeeTab();
+  } else {
+    document.getElementById('modal-emp-error').textContent = 'Error: '+j.error;
+  }
+}
+
+// ── REPORTS TAB ───────────────────────────────────────────
+const statusBadgeStyle = {
+  'ON TIME':   'background:rgba(0,165,114,0.15);color:#00a572;border:1px solid rgba(0,165,114,0.3)',
+  'LATE':      'background:rgba(212,42,74,0.15);color:#d42a4a;border:1px solid rgba(212,42,74,0.3)',
+  'EARLY OUT': 'background:rgba(201,112,0,0.15);color:#c97000;border:1px solid rgba(201,112,0,0.3)',
+  'LEFT LATE': 'background:rgba(153,51,255,0.15);color:#9933ff;border:1px solid rgba(153,51,255,0.3)',
+  'NOT OUT':   'background:rgba(107,114,128,0.15);color:#6b7280;border:1px solid rgba(107,114,128,0.3)',
+  'ABSENT':    'background:rgba(212,42,74,0.12);color:#d42a4a;border:1px solid rgba(212,42,74,0.2)',
+};
+
+function statusSpan(s){
+  const st = statusBadgeStyle[s]||'';
+  return `<span style="display:inline-block;padding:2px 6px;font-family:var(--mono);font-size:10px;border-radius:2px;${st}">${s||'—'}</span>`;
+}
+
+async function previewDailyReport() {
+  const d = document.getElementById('report-daily-date').value;
+  if(!d){toast('Select a date',false);return;}
+  const r = await fetch(BASE+'/api/reports/daily?date='+d, {headers:{'x-admin-token':adminToken}});
+  const j = await r.json();
+  const preview = document.getElementById('daily-preview');
+  const body = document.getElementById('daily-preview-body');
+  if(!j.success||!j.data.length){
+    body.innerHTML='<div style="padding:20px;text-align:center;font-family:var(--mono);font-size:12px;color:var(--muted)">NO DATA FOR THIS DATE</div>';
+    preview.style.display='block'; return;
+  }
+  body.innerHTML = j.data.map(row=>`
+    <div class="preview-row daily-grid">
+      <div class="preview-cell">${row.display_name || row.name || row.employee_id}</div>
+      <div class="preview-cell emp-id">${row.employee_id}</div>
+      <div class="preview-cell">${row.check_in||'—'}</div>
+      <div class="preview-cell">${row.check_out||'—'}</div>
+      <div class="preview-cell">${row.total_scans}</div>
+      <div class="preview-cell">${statusSpan(row.checkin_status)}</div>
+      <div class="preview-cell">${statusSpan(row.checkout_status)}</div>
+      <div class="preview-cell" style="color:${row.minutes_late>0?'var(--danger)':'var(--muted)'}">${row.minutes_late>0?'+'+row.minutes_late+'m':'—'}</div>
+    </div>
+  `).join('');
+  preview.style.display='block';
+}
+
+async function previewMonthlyReport() {
+  const m = document.getElementById('report-month').value;
+  const y = document.getElementById('report-year').value;
+  if(!y){toast('Enter a year',false);return;}
+  const r = await fetch(`${BASE}/api/reports/monthly?year=${y}&month=${m}`, {headers:{'x-admin-token':adminToken}});
+  const j = await r.json();
+  const preview = document.getElementById('monthly-preview');
+  const body = document.getElementById('monthly-preview-body');
+  if(!j.success||!j.data.length){
+    body.innerHTML='<div style="padding:20px;text-align:center;font-family:var(--mono);font-size:12px;color:var(--muted)">NO DATA FOR THIS PERIOD</div>';
+    preview.style.display='block'; return;
+  }
+  body.innerHTML = j.data.map(row=>`
+    <div class="preview-row monthly-grid">
+      <div class="preview-cell emp-id">${row.work_date||''}</div>
+      <div class="preview-cell">${row.display_name || row.name || row.employee_id}</div>
+      <div class="preview-cell emp-id">${row.employee_id}</div>
+      <div class="preview-cell">${row.check_in||'—'}</div>
+      <div class="preview-cell">${row.check_out||'—'}</div>
+      <div class="preview-cell">${row.total_scans}</div>
+      <div class="preview-cell">${statusSpan(row.checkin_status)}</div>
+      <div class="preview-cell">${statusSpan(row.checkout_status)}</div>
+    </div>
+  `).join('');
+  preview.style.display='block';
+}
+
+function exportReport(type, format) {
+  let url;
+  if(type==='daily'){
+    const d=document.getElementById('report-daily-date').value;
+    if(!d){toast('Select a date first',false);return;}
+    url=`${BASE}/api/reports/export/${format}?type=daily&date=${d}&x-admin-token=${adminToken}`;
+  } else {
+    const m=document.getElementById('report-month').value;
+    const y=document.getElementById('report-year').value;
+    if(!y){toast('Enter a year first',false);return;}
+    url=`${BASE}/api/reports/export/${format}?type=monthly&year=${y}&month=${m}&x-admin-token=${adminToken}`;
+  }
+  // Create a temporary form to POST with auth header via fetch + blob download
+  fetch(url, {headers:{'x-admin-token':adminToken}})
+    .then(r=>{if(!r.ok) throw new Error('Export failed'); return r.blob();})
+    .then(blob=>{
+      const ext = format==='pdf'?'.pdf':'.xlsx';
+      const fname = type+'_report_'+(type==='daily'?document.getElementById('report-daily-date').value:document.getElementById('report-year').value+'_'+String(document.getElementById('report-month').value).padStart(2,'0'))+ext;
+      const a=document.createElement('a');
+      a.href=URL.createObjectURL(blob); a.download=fname; a.click();
+      toast('Download started ✓');
+    }).catch(e=>toast('Export failed: '+e.message,false));
+}
+
+// ── THEME TOGGLE ──
+function toggleTheme() {
+  const isLight = document.body.classList.toggle('light');
+  document.getElementById('theme-toggle').textContent = isLight ? '🌑' : '🌙';
+  localStorage.setItem('smartpay-theme', isLight ? 'light' : 'dark');
+}
+function applyTheme() {
+  const saved = localStorage.getItem('smartpay-theme');
+  if (saved === 'light') {
+    document.body.classList.add('light');
+    document.getElementById('theme-toggle').textContent = '🌑';
+  }
+}
+
+// Init
+(async function initDashboard() {
+  const today = todayIsoDate();
+  document.getElementById('summary-date').value = today;
+  document.getElementById('compliance-date').value = today;
+  document.getElementById('compliance-date').addEventListener('change', loadCompliance);
+  document.getElementById('summary-date').addEventListener('change', loadSummary);
+  applyTheme();
+  await restoreAdminSession();
+  loadStats(); loadLive();
+  setInterval(loadLive, 10000);
+  setInterval(loadStats, 15000);
+})();
+</script>
+</body>
+</html>
