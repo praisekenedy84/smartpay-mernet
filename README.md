@@ -40,9 +40,6 @@ pm2 save
 pm2 startup
 ```
 
-## Access
-- Dashboard: http://109.205.176.113:3000
-- Admin password: smartpay2026  (change in .env)
 
 ## API Endpoints
 - GET  /api/attendance/live         — Today's events (auto-refreshes every 10s)
