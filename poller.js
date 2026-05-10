@@ -1,18 +1,23 @@
 require('dotenv').config();
+const { randomUUID } = require('crypto');
 const { Pool } = require('pg');
+const { evaluateShiftCompliance } = require('./lib/shiftCompliance');
+const { normalizePhoneE164, sendSms } = require('./lib/textify');
+const { renderEligibilitySms } = require('./lib/smsTemplate');
+const { ensureSmartpayExtendedTables } = require('./lib/schemaSmartpay');
 
 const pool = new Pool({
-  host:     process.env.DB_HOST,
-  port:     process.env.DB_PORT,
+  host: process.env.DB_HOST,
+  port: process.env.DB_PORT,
   database: process.env.DB_NAME,
-  user:     process.env.DB_USER,
+  user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
 });
 
 const POLL_INTERVAL_MS = 30 * 100;
 const SETTING_KEY_DEFAULT_SHIFT = 'default_shift_id';
+const SETTING_SMS_TEMPLATE = 'sms_eligibility_template';
 
-// ── SHIFT CACHE (default shift row, for poller logging / sanity) ──
 let shiftCache = null;
 let shiftCachedAt = 0;
 let shiftCacheForId = null;
@@ -30,6 +35,11 @@ async function ensureSettings(client) {
      ON CONFLICT (key) DO NOTHING`,
     [SETTING_KEY_DEFAULT_SHIFT]
   );
+  await client.query(
+    `INSERT INTO smartpay_settings (key, value) VALUES ($1, '')
+     ON CONFLICT (key) DO NOTHING`,
+    [SETTING_SMS_TEMPLATE]
+  );
 }
 
 async function getDefaultShiftId(client) {
@@ -43,6 +53,14 @@ async function getDefaultShiftId(client) {
   return typeof id === 'number' && !Number.isNaN(id) ? id : 1;
 }
 
+async function getSmsTemplate(client) {
+  const r = await client.query('SELECT value FROM smartpay_settings WHERE key = $1 LIMIT 1', [
+    SETTING_SMS_TEMPLATE,
+  ]);
+  const v = r.rows[0] && r.rows[0].value;
+  return v && String(v).trim() ? String(v).trim() : null;
+}
+
 async function loadEmployeeShiftMap(client) {
   const r = await client.query('SELECT id, shift_id FROM employeex');
   const map = new Map();
@@ -54,22 +72,32 @@ async function loadEmployeeShiftMap(client) {
 
 async function getShift(client, shiftId) {
   const now = Date.now();
-  if (shiftCache && shiftCacheForId === shiftId && (now - shiftCachedAt) < 60000) return shiftCache;
-  const r = await client.query(
-    'SELECT * FROM shift_config WHERE id = $1 AND active = TRUE', [shiftId]
-  );
-  if (r.rows.length) {
-    shiftCache = r.rows[0];
-    shiftCachedAt = now;
-    shiftCacheForId = shiftId;
-    console.log(`  📋 Default shift: ${shiftCache.shift_name} | in ${shiftCache.checkin_start}-${shiftCache.checkin_end} | out ${shiftCache.checkout_start}-${shiftCache.checkout_end}`);
+  if (shiftCache && shiftCacheForId === shiftId && now - shiftCachedAt < 60000) return shiftCache;
+  const r = await client.query('SELECT * FROM shift_config WHERE id = $1 AND active = TRUE', [shiftId]);
+  if (!r.rows.length) {
+    return null;
   }
+  shiftCache = r.rows[0];
+  shiftCachedAt = now;
+  shiftCacheForId = shiftId;
+  console.log(
+    `  📋 Default shift: ${shiftCache.shift_name} | in ${shiftCache.checkin_start}-${shiftCache.checkin_end} | out ${shiftCache.checkout_start}-${shiftCache.checkout_end}`
+  );
   return shiftCache;
 }
 
-// ── PROCESS ROW ───────────────────────────────────────────
-// All raw scans are stored as SCAN in attendance_log.
-// First/last scan logic is handled at read time (compliance query).
+async function loadShiftMap(client, shiftIds) {
+  const ids = [...shiftIds]
+    .map((x) => Number(x))
+    .filter((n) => Number.isInteger(n) && n > 0);
+  if (!ids.length) return new Map();
+  const r = await client.query(
+    'SELECT * FROM shift_config WHERE active = TRUE AND id = ANY($1::int[])',
+    [ids]
+  );
+  return new Map(r.rows.map((row) => [row.id, row]));
+}
+
 async function processRow(client, row, employeeShiftMap, defaultShiftId) {
   const eventTime = new Date(row.authdatetime);
   if (isNaN(eventTime.getTime())) {
@@ -81,116 +109,266 @@ async function processRow(client, row, employeeShiftMap, defaultShiftId) {
   const override = employeeShiftMap.get(empKey);
   const resolvedShiftId = override != null && override !== '' ? override : defaultShiftId;
 
-  // Store every raw scan — no classification here (shift_id mirrors HR default + override)
-  await client.query(`
+  await client.query(
+    `
     INSERT INTO attendance_log
       (employee_id, card_no, raw_event_time, direction, event_type, shift_id)
     VALUES ($1, $2, $3, $4, 'SCAN', $5)
     ON CONFLICT DO NOTHING
-  `, [
-    row.employeeid,
-    row.cardno || null,
-    eventTime,
-    0,
-    resolvedShiftId
-  ]);
+  `,
+    [row.employeeid, row.cardno || null, eventTime, 0, resolvedShiftId]
+  );
 
   console.log(`  → ${row.employeeid} | SCAN | shift ${resolvedShiftId} | ${eventTime.toISOString()}`);
 }
 
-// ── RESOLVE DAILY CHECK-IN / CHECK-OUT ───────────────────
-// After each poll, recalculate first/last scan for today
-// and update attendance_log event_type + payment_queue accordingly
-async function resolveDailyEvents(client, shift) {
-  if (!shift) return;
+async function upsertSmsLog(client, params) {
+  const {
+    id,
+    employee_id,
+    phone,
+    message_body,
+    daily_rate_snapshot,
+    textify_message_id,
+    status,
+    provider_error,
+    raw_response,
+  } = params;
+  await client.query(
+    `
+    INSERT INTO sms_log (
+      id, employee_id, work_date, phone, message_body, daily_rate_snapshot,
+      textify_message_id, status, provider_error, raw_response, updated_at
+    )
+    VALUES ($1, $2, CURRENT_DATE, $3, $4, $5, $6, $7, $8, $9::jsonb, now())
+    ON CONFLICT (employee_id, work_date) DO UPDATE SET
+      phone = EXCLUDED.phone,
+      message_body = EXCLUDED.message_body,
+      daily_rate_snapshot = EXCLUDED.daily_rate_snapshot,
+      textify_message_id = EXCLUDED.textify_message_id,
+      status = EXCLUDED.status,
+      provider_error = EXCLUDED.provider_error,
+      raw_response = EXCLUDED.raw_response,
+      updated_at = now()
+  `,
+    [
+      id,
+      employee_id,
+      phone,
+      message_body,
+      daily_rate_snapshot,
+      textify_message_id,
+      status,
+      provider_error,
+      raw_response == null ? null : JSON.stringify(raw_response),
+    ]
+  );
+}
 
-  // Get all employees who have scans today
+const SMS_SUCCESS_STATUSES = new Set(['delivered', 'sent', 'sending', 'pending']);
+
+async function resolveDailyEvents(client, defaultShiftId, employeeShiftMap) {
+  await ensureSmartpayExtendedTables(client);
+  await ensureSettings(client);
+  const smsTemplate = await getSmsTemplate(client);
+  const dateRow = await client.query('SELECT CURRENT_DATE::text AS d');
+  const todayStr = dateRow.rows[0] && dateRow.rows[0].d ? dateRow.rows[0].d : '';
+
   const employees = await client.query(`
     SELECT DISTINCT employee_id FROM attendance_log
     WHERE DATE(raw_event_time) = CURRENT_DATE
   `);
 
+  const shiftIdSet = new Set([Number(defaultShiftId)]);
   for (const { employee_id } of employees.rows) {
-    const scans = await client.query(`
-      SELECT id, raw_event_time
+    const key = String(employee_id).trim();
+    const sid = employeeShiftMap.get(key);
+    shiftIdSet.add(sid != null && sid !== '' ? Number(sid) : Number(defaultShiftId));
+  }
+  const shiftMap = await loadShiftMap(client, shiftIdSet);
+
+  for (const { employee_id } of employees.rows) {
+    const scans = await client.query(
+      `
+      SELECT id, raw_event_time, TO_CHAR(raw_event_time, 'HH24:MI:SS') AS tclock
       FROM attendance_log
       WHERE employee_id = $1
         AND DATE(raw_event_time) = CURRENT_DATE
       ORDER BY raw_event_time ASC
-    `, [employee_id]);
+    `,
+      [employee_id]
+    );
 
     if (!scans.rows.length) continue;
 
     const firstScan = scans.rows[0];
-    const lastScan  = scans.rows[scans.rows.length - 1];
+    const lastScan = scans.rows[scans.rows.length - 1];
     const isOneScan = scans.rows.length === 1;
 
-    // Reset all today's scans for this employee to SCAN
-    await client.query(`
+    await client.query(
+      `
       UPDATE attendance_log
       SET event_type = 'SCAN', payment_triggered = FALSE
       WHERE employee_id = $1
         AND DATE(raw_event_time) = CURRENT_DATE
-    `, [employee_id]);
+    `,
+      [employee_id]
+    );
 
-    // Mark first scan as CHECK_IN
-    await client.query(`
+    await client.query(
+      `
       UPDATE attendance_log
       SET event_type = 'CHECK_IN'
       WHERE id = $1
-    `, [firstScan.id]);
+    `,
+      [firstScan.id]
+    );
 
-    // Mark last scan as CHECK_OUT (only if more than one scan)
     if (!isOneScan) {
-      await client.query(`
+      await client.query(
+        `
         UPDATE attendance_log
         SET event_type = 'CHECK_OUT'
         WHERE id = $1
-      `, [lastScan.id]);
+      `,
+        [lastScan.id]
+      );
+    }
 
-      // Determine checkout compliance
-      const checkoutTime = lastScan.raw_event_time.toTimeString
-        ? lastScan.raw_event_time.toTimeString().slice(0, 8)
-        : new Date(lastScan.raw_event_time).toTimeString().slice(0, 8);
+    const empHr = await client.query(
+      `SELECT id, firstname, lastname, phonenumber, daily_rate, shift_id
+       FROM employeex WHERE TRIM(id::text) = TRIM($1::text) LIMIT 1`,
+      [employee_id]
+    );
+    const emp = empHr.rows[0];
+    const effShiftId =
+      emp && emp.shift_id != null && emp.shift_id !== ''
+        ? Number(emp.shift_id)
+        : Number(defaultShiftId);
+    const shift = shiftMap.get(effShiftId) || shiftMap.get(Number(defaultShiftId));
 
-      // Queue payment if checkout exists
-      const alreadyQueued = await client.query(`
-        SELECT 1 FROM payment_queue
-        WHERE employee_id = $1 AND event_date = CURRENT_DATE
-      `, [employee_id]);
+    const firstClock = scans.rows[0].tclock;
+    const lastClock = scans.rows[scans.rows.length - 1].tclock;
+    const { eligibleForPayment } = evaluateShiftCompliance({
+      firstScanClock: firstClock,
+      lastScanClock: lastClock,
+      totalScans: scans.rows.length,
+      shift: shift || null,
+    });
 
-      if (!alreadyQueued.rows.length) {
-        await client.query(`
-          INSERT INTO payment_queue
-            (employee_id, event_date, checkout_time, status)
-          VALUES ($1, CURRENT_DATE, $2, 'PENDING')
-          ON CONFLICT (employee_id, event_date) DO UPDATE
-            SET checkout_time = EXCLUDED.checkout_time
-        `, [employee_id, lastScan.raw_event_time]);
+    if (isOneScan || !eligibleForPayment || !shift) {
+      await client.query(
+        `DELETE FROM payment_queue WHERE employee_id = $1 AND event_date = CURRENT_DATE`,
+        [employee_id]
+      );
+      continue;
+    }
 
-        console.log(`  💳 Payment queued for ${employee_id} | checkout ${checkoutTime}`);
-      } else {
-        // Update checkout time to latest scan
-        await client.query(`
-          UPDATE payment_queue
-          SET checkout_time = $1
-          WHERE employee_id = $2 AND event_date = CURRENT_DATE
-        `, [lastScan.raw_event_time, employee_id]);
-      }
+    if (!emp) {
+      await client.query(
+        `DELETE FROM payment_queue WHERE employee_id = $1 AND event_date = CURRENT_DATE`,
+        [employee_id]
+      );
+      continue;
+    }
 
-      // Mark check-in as payment_triggered
-      await client.query(`
-        UPDATE attendance_log
-        SET payment_triggered = TRUE
-        WHERE employee_id = $1
-          AND event_type = 'CHECK_IN'
-          AND DATE(raw_event_time) = CURRENT_DATE
-      `, [employee_id]);
+    const rateSnap = emp.daily_rate != null ? Number(emp.daily_rate) : 0;
+    const displayName =
+      `${emp.firstname || ''} ${emp.lastname || ''}`.trim() || String(employee_id);
+    const phoneRaw = emp.phonenumber != null ? String(emp.phonenumber).trim() : '';
+    const phoneE164 = phoneRaw ? normalizePhoneE164(phoneRaw) : null;
+
+    const checkoutTime = lastScan.raw_event_time;
+
+    await client.query(
+      `
+      INSERT INTO payment_queue
+        (employee_id, event_date, checkout_time, status, compliant, amount)
+      VALUES ($1, CURRENT_DATE, $2, 'PENDING', TRUE, $3)
+      ON CONFLICT (employee_id, event_date) DO UPDATE SET
+        checkout_time = EXCLUDED.checkout_time,
+        compliant = TRUE,
+        amount = EXCLUDED.amount,
+        status = 'PENDING'
+    `,
+      [employee_id, checkoutTime, rateSnap]
+    );
+
+    await client.query(
+      `
+      UPDATE attendance_log
+      SET payment_triggered = TRUE
+      WHERE employee_id = $1
+        AND event_type = 'CHECK_IN'
+        AND DATE(raw_event_time) = CURRENT_DATE
+    `,
+      [employee_id]
+    );
+
+    const logR = await client.query(
+      `SELECT id, status FROM sms_log WHERE employee_id = $1 AND work_date = CURRENT_DATE`,
+      [employee_id]
+    );
+    const existingLog = logR.rows[0];
+    if (existingLog && SMS_SUCCESS_STATUSES.has(String(existingLog.status || '').toLowerCase())) {
+      console.log(`  📱 SMS already sent/sending for ${employee_id} — skip`);
+      continue;
+    }
+
+    const messageBody = renderEligibilitySms(smsTemplate, {
+      name: displayName,
+      amount: rateSnap,
+      date: todayStr,
+      currency: 'TZS',
+    });
+
+    if (!phoneE164) {
+      await upsertSmsLog(client, {
+        id: existingLog ? existingLog.id : randomUUID(),
+        employee_id: String(employee_id).trim(),
+        phone: phoneRaw || null,
+        message_body: messageBody,
+        daily_rate_snapshot: rateSnap,
+        textify_message_id: null,
+        status: 'failed',
+        provider_error: 'Missing or invalid phone number',
+        raw_response: null,
+      });
+      console.warn(`  ⚠ Eligible ${employee_id} — no valid phone, SMS not sent`);
+      continue;
+    }
+
+    const sendResult = await sendSms({ receiver: phoneE164, content: messageBody });
+    if (sendResult.ok) {
+      await upsertSmsLog(client, {
+        id: existingLog ? existingLog.id : randomUUID(),
+        employee_id: String(employee_id).trim(),
+        phone: phoneE164,
+        message_body: messageBody,
+        daily_rate_snapshot: rateSnap,
+        textify_message_id: sendResult.messageId || null,
+        status: 'sent',
+        provider_error: null,
+        raw_response: sendResult.raw || null,
+      });
+      console.log(`  📱 SMS sent to ${employee_id} (${phoneE164})`);
+    } else {
+      await upsertSmsLog(client, {
+        id: existingLog ? existingLog.id : randomUUID(),
+        employee_id: String(employee_id).trim(),
+        phone: phoneE164,
+        message_body: messageBody,
+        daily_rate_snapshot: rateSnap,
+        textify_message_id: null,
+        status: 'failed',
+        provider_error: sendResult.error || 'send failed',
+        raw_response: sendResult.raw || null,
+      });
+      console.warn(`  ⚠ SMS failed for ${employee_id}: ${sendResult.error}`);
     }
   }
 }
 
-// ── POLL ──────────────────────────────────────────────────
 async function poll() {
   const client = await pool.connect();
   try {
@@ -201,19 +379,18 @@ async function poll() {
       )
     `);
 
-    const stateRow = await client.query(
-      "SELECT value FROM poller_state WHERE key = 'last_attlog_id'"
-    );
-    const lastProcessed = stateRow.rows.length
-      ? stateRow.rows[0].value
-      : '1970-01-01 00:00:00';
+    const stateRow = await client.query("SELECT value FROM poller_state WHERE key = 'last_attlog_id'");
+    const lastProcessed = stateRow.rows.length ? stateRow.rows[0].value : '1970-01-01 00:00:00';
 
-    const newRows = await client.query(`
+    const newRows = await client.query(
+      `
       SELECT * FROM attlog
       WHERE authdatetime > $1
       ORDER BY authdatetime ASC
       LIMIT 500
-    `, [lastProcessed]);
+    `,
+      [lastProcessed]
+    );
 
     if (!newRows.rows.length) {
       console.log(`[${new Date().toISOString()}] Poll: no new rows`);
@@ -233,17 +410,18 @@ async function poll() {
       await processRow(client, row, employeeShiftMap, defaultShiftId);
     }
 
-    // Recalculate first/last scan classifications for today
-    await resolveDailyEvents(client, shift);
+    await resolveDailyEvents(client, defaultShiftId, employeeShiftMap);
 
     const latest = newRows.rows[newRows.rows.length - 1].authdatetime;
-    await client.query(`
+    await client.query(
+      `
       INSERT INTO poller_state (key, value) VALUES ('last_attlog_id', $1)
       ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value
-    `, [latest]);
+    `,
+      [latest]
+    );
 
     console.log(`  ✅ Watermark: ${latest}`);
-
   } catch (err) {
     console.error(`[${new Date().toISOString()}] Poll error:`, err.message);
   } finally {
@@ -251,10 +429,12 @@ async function poll() {
   }
 }
 
-// ── START ─────────────────────────────────────────────────
 console.log(`🔄 SmartPay Poller starting — interval: ${POLL_INTERVAL_MS / 1000}s`);
 pool.connect((err) => {
-  if (err) { console.error('❌ DB connection failed:', err.message); process.exit(1); }
+  if (err) {
+    console.error('❌ DB connection failed:', err.message);
+    process.exit(1);
+  }
   console.log('✅ Connected to PostgreSQL (attendance)');
   poll();
   setInterval(poll, POLL_INTERVAL_MS);

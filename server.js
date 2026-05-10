@@ -4,6 +4,8 @@ const cors = require('cors');
 const path = require('path');
 const { fork } = require('child_process');
 const { Pool } = require('pg');
+const { ensureSmartpayExtendedTables } = require('./lib/schemaSmartpay');
+const { DEFAULT_TEMPLATE } = require('./lib/smsTemplate');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -25,8 +27,23 @@ pool.connect((err) => {
   }
 });
 
+(async function bootstrapSmartpaySchema() {
+  try {
+    const c = await pool.connect();
+    try {
+      await ensureSmartpayExtendedTables(c);
+    } finally {
+      c.release();
+    }
+    await ensureSmartpaySettingsTable();
+  } catch (e) {
+    console.error('⚠ Schema bootstrap:', e.message);
+  }
+})();
+
 // ── Global default shift (per-employee override: employeex.shift_id) ──
 const SETTING_KEY_DEFAULT_SHIFT = 'default_shift_id';
+const SETTING_KEY_SMS_TEMPLATE = 'sms_eligibility_template';
 
 async function ensureSmartpaySettingsTable() {
   await pool.query(`
@@ -40,6 +57,11 @@ async function ensureSmartpaySettingsTable() {
     `INSERT INTO smartpay_settings (key, value) VALUES ($1, '1')
      ON CONFLICT (key) DO NOTHING`,
     [SETTING_KEY_DEFAULT_SHIFT]
+  );
+  await pool.query(
+    `INSERT INTO smartpay_settings (key, value) VALUES ($1, '')
+     ON CONFLICT (key) DO NOTHING`,
+    [SETTING_KEY_SMS_TEMPLATE]
   );
 }
 
@@ -183,7 +205,7 @@ app.get('/api/attendance/live', async (req, res) => {
         e.lastname,
         (${dn}) AS display_name,
         al.event_type,
-        al.raw_event_time,
+        TO_CHAR(al.raw_event_time, 'HH24:MI:SS') AS raw_event_time,
         (${eff}) AS shift_id,
         al.payment_triggered
       FROM attendance_log al
@@ -198,30 +220,83 @@ app.get('/api/attendance/live', async (req, res) => {
   }
 });
 
-// Daily summary: per employee today
+// Daily summary: per employee today (check-in/out = first/last scan; eligibility matches compliance / poller)
 app.get('/api/attendance/summary', async (req, res) => {
   const date = req.query.date || new Date().toISOString().split('T')[0];
   try {
     await getAttlogSchema();
+    await ensureSmartpaySettingsTable();
     const dn = buildDisplayNameSql('al.employee_id');
-    const result = await pool.query(`
+    const effShift = sqlEffectiveShiftIdFromEmployeex();
+    const result = await pool.query(
+      `
+      WITH day_scans AS (
+        SELECT
+          al.employee_id,
+          e.firstname,
+          e.lastname,
+          MIN((${dn})) AS display_name,
+          e.phonenumber,
+          MIN(al.raw_event_time) AS check_in,
+          MAX(al.raw_event_time) AS last_scan,
+          COUNT(*) AS total_scans,
+          (${effShift}) AS shift_id,
+          BOOL_OR(al.payment_triggered) AS payment_triggered,
+          COALESCE(MAX(e.daily_rate), 0)::numeric AS daily_rate
+        FROM attendance_log al
+        LEFT JOIN employeex e ON e.id = al.employee_id
+        WHERE DATE(al.raw_event_time) = $1
+        GROUP BY al.employee_id, e.firstname, e.lastname, e.phonenumber
+      ),
+      with_shift AS (
+        SELECT
+          d.*,
+          CASE
+            WHEN d.check_in IS NULL THEN 'ABSENT'
+            WHEN d.check_in::TIME <= s.checkin_end THEN 'ON TIME'
+            ELSE 'LATE'
+          END AS checkin_status,
+          CASE
+            WHEN d.total_scans <= 1 THEN 'NOT OUT'
+            WHEN d.last_scan::TIME < s.checkout_start THEN 'EARLY OUT'
+            WHEN d.last_scan::TIME > s.checkout_end THEN 'LEFT LATE'
+            ELSE 'ON TIME'
+          END AS checkout_status
+        FROM day_scans d
+        LEFT JOIN shift_config s ON s.id = d.shift_id
+      )
       SELECT
-        al.employee_id,
-        e.firstname,
-        e.lastname,
-        MIN((${dn})) AS display_name,
-        e.phonenumber,
-        MIN(CASE WHEN al.event_type = 'CHECK_IN'  THEN al.raw_event_time END) AS check_in,
-        MAX(CASE WHEN al.event_type = 'CHECK_OUT' THEN al.raw_event_time END) AS check_out,
-        BOOL_OR(al.payment_triggered) AS payment_triggered,
-        COUNT(*) AS total_events
-      FROM attendance_log al
-      LEFT JOIN employeex e ON e.id = al.employee_id
-      WHERE DATE(al.raw_event_time) = $1
-      GROUP BY al.employee_id, e.firstname, e.lastname, e.phonenumber
-      ORDER BY MIN(al.raw_event_time) DESC
-    `, [date]);
-    res.json({ success: true, date, data: result.rows });
+        w.employee_id,
+        w.firstname,
+        w.lastname,
+        w.display_name,
+        w.phonenumber,
+        TO_CHAR(w.check_in, 'HH24:MI:SS') AS check_in,
+        TO_CHAR(CASE WHEN w.total_scans > 1 THEN w.last_scan ELSE NULL END, 'HH24:MI:SS') AS check_out,
+        w.total_scans AS total_events,
+        w.payment_triggered,
+        w.daily_rate,
+        (w.checkin_status = 'ON TIME' AND w.checkout_status = 'ON TIME') AS eligible_for_payment
+      FROM with_shift w
+      ORDER BY w.check_in ASC NULLS LAST
+    `,
+      [date]
+    );
+    const rows = result.rows;
+    let eligibleCount = 0;
+    let eligibleTotal = 0;
+    for (const r of rows) {
+      if (r.eligible_for_payment) {
+        eligibleCount++;
+        eligibleTotal += Number(r.daily_rate);
+      }
+    }
+    const totals = {
+      employees_with_scans: rows.length,
+      eligible_count: eligibleCount,
+      eligible_total_amount: Math.round(eligibleTotal * 100) / 100,
+    };
+    res.json({ success: true, date, totals, data: rows });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
@@ -237,7 +312,7 @@ app.get('/api/attendance/scans', async (req, res) => {
   try {
     const result = await pool.query(
       `
-      SELECT id, raw_event_time, event_type, direction, shift_id, payment_triggered, card_no
+      SELECT id, TO_CHAR(raw_event_time, 'HH24:MI:SS') AS raw_event_time, event_type, direction, shift_id, payment_triggered, card_no
       FROM attendance_log
       WHERE DATE(raw_event_time) = $1::date AND TRIM(employee_id::text) = TRIM($2::text)
       ORDER BY raw_event_time ASC
@@ -336,7 +411,30 @@ app.get('/api/attendance/compliance', async (req, res) => {
         FROM day_scans d
         LEFT JOIN shift_config s ON s.id = d.shift_id
       )
-      SELECT * FROM with_shift ORDER BY check_in ASC NULLS LAST
+      SELECT
+        w.employee_id,
+        w.firstname,
+        w.lastname,
+        w.display_name,
+        w.phonenumber,
+        TO_CHAR(w.check_in, 'HH24:MI:SS') AS check_in,
+        TO_CHAR(w.last_scan, 'HH24:MI:SS') AS last_scan,
+        w.total_scans,
+        w.shift_is_default,
+        w.shift_id,
+        w.payment_triggered,
+        TO_CHAR(w.check_out, 'HH24:MI:SS') AS check_out,
+        w.shift_name,
+        w.checkin_start,
+        w.checkin_end,
+        w.checkout_start,
+        w.checkout_end,
+        w.checkin_status,
+        w.checkout_status,
+        w.minutes_late,
+        w.minutes_early_out
+      FROM with_shift w
+      ORDER BY w.check_in ASC NULLS LAST
     `, [date]);
     res.json({ success: true, date, data: result.rows });
   } catch (err) {
@@ -472,37 +570,80 @@ app.post('/api/admin/employees', adminAuth, async (req, res) => {
 });
 
 
-// Distinct employees seen in HIKCentral attlog (enriched from employeex when present)
+// Everyone who ever appears in attlog OR attendance_log (no date limit), enriched from employeex
 app.get('/api/employees/from-attlog', async (req, res) => {
   try {
     await ensureSmartpaySettingsTable();
-    const { idCol, displayMaxSql, authDtCol } = await getAttlogSchema();
+    const { idCol, displayTrimSqlTemplate, authDtCol } = await getAttlogSchema();
     if (!idCol) {
       return res.status(500).json({ success: false, error: 'attlog has no recognizable employee id column' });
     }
-    const effShift = sqlEffectiveShiftIdFromEmployeex();
-    let selectExtras = `(MAX(e.shift_id) IS NULL) AS shift_is_default, (${effShift}) AS shift_id`;
-    if (displayMaxSql) {
-      selectExtras += `,\n      ${displayMaxSql} AS attlog_name`;
-      selectExtras += `,\n      COALESCE(NULLIF(TRIM(CONCAT_WS(' ', MAX(e.firstname), MAX(e.lastname))), ''), ${displayMaxSql}) AS display_name`;
-    } else {
-      selectExtras += `,\n      NULLIF(TRIM(CONCAT_WS(' ', MAX(e.firstname), MAX(e.lastname))), '') AS display_name`;
-    }
+    const defShift = sqlDefaultShiftIdScalar();
+    const hasAttlogName = !!displayTrimSqlTemplate;
+    const nameSub = hasAttlogName
+      ? `(SELECT MAX(${displayTrimSqlTemplate.replace(/\ba\./g, 'a_nm.')}) FROM attlog a_nm WHERE TRIM(a_nm.${idCol}::text) = TRIM(i.id))`
+      : 'NULL::text';
+
     const sql = `
+      WITH ids AS (
+        SELECT TRIM(a.${idCol}::text) AS id
+        FROM attlog a
+        WHERE TRIM(a.${idCol}::text) IS NOT NULL AND TRIM(a.${idCol}::text) <> ''
+        UNION
+        SELECT TRIM(al.employee_id::text) AS id
+        FROM attendance_log al
+        WHERE al.employee_id IS NOT NULL AND TRIM(al.employee_id::text) <> ''
+      ),
+      att_agg AS (
+        SELECT TRIM(a.${idCol}::text) AS id,
+               MAX(a.${authDtCol}::timestamp) AS last_swipe,
+               COUNT(*)::bigint AS cnt
+        FROM attlog a
+        GROUP BY TRIM(a.${idCol}::text)
+      ),
+      al_agg AS (
+        SELECT TRIM(al.employee_id::text) AS id,
+               MAX(al.raw_event_time::timestamp) AS last_swipe,
+               COUNT(*)::bigint AS cnt
+        FROM attendance_log al
+        GROUP BY TRIM(al.employee_id::text)
+      )
       SELECT
-        a.${idCol}::text AS id,
-        MAX(a.${authDtCol}) AS last_swipe_at,
-        COUNT(*)::bigint AS swipe_count,
-        MAX(e.firstname) AS firstname,
-        MAX(e.lastname) AS lastname,
-        MAX(e.phonenumber) AS phonenumber,
-        MAX(e.daily_rate) AS daily_rate,
-        MAX(e.provider) AS provider,
-        ${selectExtras}
-      FROM attlog a
-      LEFT JOIN employeex e ON TRIM(e.id) = TRIM(a.${idCol}::text)
-      GROUP BY a.${idCol}
-      ORDER BY MAX(a.${authDtCol}) DESC NULLS LAST
+        i.id,
+        TO_CHAR(
+          CASE
+            WHEN att.last_swipe IS NULL AND al.last_swipe IS NULL THEN NULL
+            WHEN att.last_swipe IS NULL THEN al.last_swipe
+            WHEN al.last_swipe IS NULL THEN att.last_swipe
+            ELSE GREATEST(att.last_swipe, al.last_swipe)
+          END,
+          'YYYY-MM-DD HH24:MI:SS'
+        ) AS last_swipe_at,
+        GREATEST(COALESCE(att.cnt, 0::bigint), COALESCE(al.cnt, 0::bigint)) AS swipe_count,
+        e.firstname,
+        e.lastname,
+        e.phonenumber,
+        e.daily_rate,
+        e.provider,
+        (e.shift_id IS NULL) AS shift_is_default,
+        COALESCE(e.shift_id, ${defShift}, 1) AS shift_id,
+        ${hasAttlogName ? `${nameSub} AS attlog_name,` : 'NULL::text AS attlog_name,'}
+        COALESCE(
+          NULLIF(TRIM(CONCAT_WS(' ', NULLIF(TRIM(e.firstname::text), ''), NULLIF(TRIM(e.lastname::text), ''))), ''),
+          ${hasAttlogName ? nameSub : 'NULL::text'},
+          TRIM(i.id)
+        ) AS display_name
+      FROM ids i
+      LEFT JOIN att_agg att ON TRIM(att.id) = TRIM(i.id)
+      LEFT JOIN al_agg al ON TRIM(al.id) = TRIM(i.id)
+      LEFT JOIN employeex e ON TRIM(e.id) = TRIM(i.id)
+      ORDER BY
+        CASE
+          WHEN att.last_swipe IS NULL AND al.last_swipe IS NULL THEN NULL
+          WHEN att.last_swipe IS NULL THEN al.last_swipe
+          WHEN al.last_swipe IS NULL THEN att.last_swipe
+          ELSE GREATEST(att.last_swipe, al.last_swipe)
+        END DESC NULLS LAST
     `;
     const result = await pool.query(sql);
     return res.json({ success: true, data: result.rows });
@@ -637,6 +778,117 @@ app.put('/api/admin/employees/:id/shift', adminAuth, async (req, res) => {
   }
 });
 
+// SMS eligibility template ({name}, {amount}, {date}, {currency}); empty = built-in default
+app.get('/api/admin/settings/sms-template', adminAuth, async (req, res) => {
+  try {
+    await ensureSmartpaySettingsTable();
+    const r = await pool.query(
+      `SELECT value FROM smartpay_settings WHERE key = $1 LIMIT 1`,
+      [SETTING_KEY_SMS_TEMPLATE]
+    );
+    const template = r.rows[0] ? r.rows[0].value : '';
+    res.json({
+      success: true,
+      data: { template: template || '', default_template: DEFAULT_TEMPLATE },
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.put('/api/admin/settings/sms-template', adminAuth, async (req, res) => {
+  const t = req.body && req.body.template != null ? String(req.body.template) : '';
+  try {
+    await pool.query(
+      `
+      INSERT INTO smartpay_settings (key, value, updated_at) VALUES ($1, $2, now())
+      ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now()
+    `,
+      [SETTING_KEY_SMS_TEMPLATE, t]
+    );
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.get('/api/admin/sms-logs', adminAuth, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    await ensureSmartpayExtendedTables(client);
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit, 10) || 25));
+    const offset = (page - 1) * limit;
+    const conds = ['TRUE'];
+    const params = [];
+    let i = 1;
+    if (req.query.date && String(req.query.date).trim()) {
+      conds.push(`s.work_date = $${i++}::date`);
+      params.push(String(req.query.date).trim());
+    }
+    if (req.query.employee_id != null && String(req.query.employee_id).trim() !== '') {
+      conds.push(`TRIM(s.employee_id::text) = TRIM($${i++}::text)`);
+      params.push(String(req.query.employee_id).trim());
+    }
+    const where = conds.join(' AND ');
+    const countR = await client.query(`SELECT COUNT(*)::int AS c FROM sms_log s WHERE ${where}`, params);
+    const total = countR.rows[0].c;
+    const dataR = await client.query(
+      `
+      SELECT s.*, e.firstname, e.lastname
+      FROM sms_log s
+      LEFT JOIN employeex e ON TRIM(e.id::text) = TRIM(s.employee_id::text)
+      WHERE ${where}
+      ORDER BY s.created_at DESC
+      LIMIT $${i} OFFSET $${i + 1}
+    `,
+      [...params, limit, offset]
+    );
+    res.json({ success: true, total, page, limit, data: dataR.rows });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  } finally {
+    client.release();
+  }
+});
+
+// Textify delivery status webhook (configure URL + optional secret in Textify dashboard)
+app.post('/api/webhooks/textify', async (req, res) => {
+  try {
+    const secret = process.env.TEXTIFY_WEBHOOK_SECRET;
+    if (secret) {
+      const token = req.headers['x-textify-secret'] || req.query.secret;
+      if (token !== secret) {
+        return res.status(401).json({ success: false, error: 'Unauthorized' });
+      }
+    }
+    const body = req.body || {};
+    const mid = body.id != null ? String(body.id) : '';
+    const st = body.status != null ? String(body.status).toLowerCase() : '';
+    if (mid && st) {
+      const client = await pool.connect();
+      try {
+        await ensureSmartpayExtendedTables(client);
+        await client.query(
+          `
+          UPDATE sms_log
+          SET status = $1,
+              updated_at = now(),
+              raw_response = COALESCE($2::jsonb, raw_response)
+          WHERE textify_message_id = $3
+        `,
+          [st, JSON.stringify(body), mid]
+        );
+      } finally {
+        client.release();
+      }
+    }
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // ── REPORT ENDPOINTS ──────────────────────────────────────
 
 // Daily report data
@@ -663,9 +915,17 @@ app.get('/api/reports/daily', adminAuth, async (req, res) => {
         GROUP BY al.employee_id, e.firstname, e.lastname, e.phonenumber
       )
       SELECT
-        d.*,
+        d.employee_id,
+        d.firstname,
+        d.lastname,
+        d.phonenumber,
+        d.display_name,
         d.display_name AS name,
-        CASE WHEN d.total_scans > 1 THEN d.last_scan ELSE NULL END AS check_out,
+        TO_CHAR(d.check_in, 'HH24:MI:SS') AS check_in,
+        TO_CHAR(d.last_scan, 'HH24:MI:SS') AS last_scan,
+        d.total_scans,
+        d.shift_id,
+        TO_CHAR(CASE WHEN d.total_scans > 1 THEN d.last_scan ELSE NULL END, 'HH24:MI:SS') AS check_out,
         s.shift_name, s.checkin_start, s.checkin_end, s.checkout_start, s.checkout_end,
         CASE
           WHEN d.check_in IS NULL THEN 'ABSENT'
@@ -724,9 +984,17 @@ app.get('/api/reports/monthly', adminAuth, async (req, res) => {
         GROUP BY al.employee_id, e.firstname, e.lastname, DATE(al.raw_event_time)
       )
       SELECT
-        d.*,
+        d.employee_id,
+        d.firstname,
+        d.lastname,
+        d.display_name,
         d.display_name AS name,
-        CASE WHEN d.total_scans > 1 THEN d.last_scan ELSE NULL END AS check_out,
+        d.work_date,
+        TO_CHAR(d.check_in, 'HH24:MI:SS') AS check_in,
+        TO_CHAR(d.last_scan, 'HH24:MI:SS') AS last_scan,
+        d.total_scans,
+        d.shift_id,
+        TO_CHAR(CASE WHEN d.total_scans > 1 THEN d.last_scan ELSE NULL END, 'HH24:MI:SS') AS check_out,
         s.shift_name,
         s.checkin_start, s.checkin_end, s.checkout_start, s.checkout_end,
         CASE

@@ -3,37 +3,47 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>SmartPay — Attendance Control</title>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600;700;800&family=Barlow+Condensed:wght@700;800;900&display=swap" rel="stylesheet">
+<title>SmartPay · Attendance</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg:         #07090d;
-    --bg-elevated:#0d1017;
-    --surface:    rgba(18, 22, 30, 0.72);
-    --surface-solid:#12161f;
-    --border:     rgba(255,255,255,0.06);
-    --border2:    rgba(255,255,255,0.11);
-    --text:       #e8ecf4;
-    --muted:      #7d8a9e;
-    --accent:     #2ee6a8;
-    --accent-dim: rgba(46, 230, 168, 0.14);
-    --accent2:    #4db8ff;
-    --accent2-dim:rgba(77, 184, 255, 0.12);
-    --warn:       #ffb020;
-    --danger:     #ff5c7a;
-    --in:         #2ee6a8;
-    --out:        #4db8ff;
-    --radius-sm:  6px;
-    --radius:     12px;
-    --radius-lg:  16px;
-    --shadow-sm:  0 1px 2px rgba(0,0,0,0.35);
-    --shadow-md:  0 12px 40px rgba(0,0,0,0.45);
-    --mono:       'JetBrains Mono', ui-monospace, monospace;
-    --sans:       'Outfit', system-ui, sans-serif;
-    --cond:       'Barlow Condensed', sans-serif;
+    --bg:          #0b0f14;
+    --bg-elevated: #111820;
+    --surface:     rgba(17, 24, 32, 0.88);
+    --surface-solid:#141c26;
+    --border:      rgba(255,255,255,0.06);
+    --border2:     rgba(255,255,255,0.1);
+    --text:        #e8eaed;
+    --muted:       #8b949e;
+    --accent:      #3b82f6;
+    --accent-dim:  rgba(59, 130, 246, 0.12);
+    --accent2:     #60a5fa;
+    --accent2-dim: rgba(96, 165, 250, 0.1);
+    --success:     #10b981;
+    --success-dim: rgba(16, 185, 129, 0.12);
+    --warn:        #d97706;
+    --danger:      #ef4444;
+    --in:          #10b981;
+    --out:         #60a5fa;
+    --radius-sm:   6px;
+    --radius:      10px;
+    --radius-lg:   14px;
+    --shadow-sm:   0 1px 2px rgba(0,0,0,0.28);
+    --shadow-md:   0 16px 48px rgba(0,0,0,0.4);
+    --mono:        'JetBrains Mono', ui-monospace, monospace;
+    --sans:        'Poppins', system-ui, -apple-system, sans-serif;
+    --cond:        'Poppins', system-ui, -apple-system, sans-serif;
+    --heading-weight: 600;
+    --sidebar-w:     248px;
   }
   * { margin:0; padding:0; box-sizing:border-box; }
-  html { scroll-behavior:smooth; }
+  html {
+    scroll-behavior:smooth;
+    -webkit-text-size-adjust:100%;
+    text-size-adjust:100%;
+    overflow-x:clip;
+  }
+  img, svg, video { max-width:100%; height:auto; }
   @media (prefers-reduced-motion: reduce) {
     html { scroll-behavior:auto; }
     *, *::before, *::after { animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; }
@@ -41,91 +51,189 @@
   body {
     background:var(--bg);
     background-image:
-      radial-gradient(ellipse 100% 70% at 15% -20%, rgba(46, 230, 168, 0.09), transparent 55%),
-      radial-gradient(ellipse 80% 60% at 95% 10%, rgba(77, 184, 255, 0.07), transparent 50%),
-      radial-gradient(ellipse 60% 40% at 50% 100%, rgba(77, 184, 255, 0.04), transparent 45%);
+      radial-gradient(ellipse 120% 80% at 0% 0%, rgba(59, 130, 246, 0.06), transparent 55%),
+      radial-gradient(ellipse 90% 60% at 100% 0%, rgba(15, 23, 42, 0.5), transparent 50%);
     color:var(--text);
     font-family:var(--sans);
     font-size:15px;
-    line-height:1.45;
+    line-height:1.5;
     min-height:100vh;
+    min-height:100dvh;
     -webkit-font-smoothing:antialiased;
+    overflow-x:clip;
   }
   body::before {
     content:''; position:fixed; inset:0;
-    background:repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.018) 2px, rgba(255,255,255,0.018) 4px);
+    background:repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.006) 2px, rgba(255,255,255,0.006) 4px);
     pointer-events:none; z-index:0;
   }
-  header {
-    display:flex; align-items:center; justify-content:space-between;
-    padding:max(16px, env(safe-area-inset-top, 16px)) max(32px, env(safe-area-inset-right, 0px)) 16px max(32px, env(safe-area-inset-left, 0px));
-    background:var(--surface);
-    backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
-    border-bottom:1px solid var(--border);
-    box-shadow:0 4px 24px rgba(0,0,0,0.2);
-    position:sticky; top:0; z-index:100;
+
+  .app-shell {
+    display:flex;
+    min-height:100vh;
+    min-height:100dvh;
+    position:relative;
+    z-index:1;
   }
-  nav {
-    display:flex; flex-wrap:nowrap; align-items:stretch;
-    padding:0 max(28px, env(safe-area-inset-right, 0px)) 0 max(28px, env(safe-area-inset-left, 0px));
-    gap:4px;
-    overflow-x:auto; overflow-y:hidden;
-    -webkit-overflow-scrolling:touch;
-    scrollbar-width:thin;
-    scroll-snap-type:x proximity;
-    background:var(--surface);
-    backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+  .app-sidebar {
+    width:var(--sidebar-w);
+    flex-shrink:0;
+    background:var(--surface-solid);
+    border-right:1px solid var(--border);
+    display:flex;
+    flex-direction:column;
+    padding:max(20px, env(safe-area-inset-top, 20px)) 12px 24px max(20px, env(safe-area-inset-bottom, 20px));
+    padding-left:max(12px, env(safe-area-inset-left, 12px));
+    position:sticky;
+    top:0;
+    align-self:flex-start;
+    height:100vh;
+    height:100dvh;
+    overflow-y:auto;
+    overflow-x:hidden;
+  }
+  .sidebar-brand {
+    padding:0 10px 18px;
+    margin-bottom:4px;
     border-bottom:1px solid var(--border);
-    position:relative; z-index:50;
+  }
+  .sidebar-brand .logo { align-items:flex-start; }
+  .sidebar-nav {
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+    padding-top:14px;
+    flex:1;
+    min-height:0;
+  }
+  .sidebar-nav .tab {
+    width:100%;
+    justify-content:flex-start;
+    text-align:left;
+    border-bottom:none;
+    border-left:3px solid transparent;
+    margin-bottom:0;
+    border-radius:var(--radius-sm);
+    padding:11px 12px 11px 13px;
+    min-height:44px;
+    scroll-snap-align:none;
+  }
+  .sidebar-nav .tab:hover {
+    background:rgba(255,255,255,0.05);
+  }
+  .sidebar-nav .tab.active {
+    border-bottom-color:transparent;
+    border-left-color:var(--accent);
+    background:var(--accent-dim);
+    color:var(--text);
+  }
+  body.light .sidebar-nav .tab:hover { background:rgba(15,23,42,0.04); }
+  body.light .sidebar-nav .tab.active { background:rgba(37,99,235,0.08); }
+
+  .app-main {
+    flex:1;
+    min-width:0;
+    display:flex;
+    flex-direction:column;
+    min-height:100vh;
+    min-height:100dvh;
+    background:transparent;
+  }
+  .app-topbar {
+    display:flex;
+    align-items:center;
+    justify-content:flex-end;
+    gap:16px;
+    padding:max(12px, env(safe-area-inset-top, 12px)) max(28px, env(safe-area-inset-right, 0px)) 12px max(28px, env(safe-area-inset-left, 0px));
+    padding-left:max(28px, calc(env(safe-area-inset-left, 0px) + 8px));
+    background:var(--surface-solid);
+    border-bottom:1px solid var(--border);
+    position:sticky;
+    top:0;
+    z-index:80;
+    flex-shrink:0;
+  }
+  .content-frame {
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    max-width:1600px;
+    width:100%;
+    margin:0 auto;
+    padding-left:max(28px, env(safe-area-inset-left, 0px));
+    padding-right:max(28px, env(safe-area-inset-right, 0px));
+    padding-bottom:max(28px, env(safe-area-inset-bottom, 0px));
+    position:relative;
+  }
+  .content-head {
+    padding-top:22px;
+    padding-bottom:4px;
+  }
+  .breadcrumb {
+    display:flex;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:6px;
+    font-size:12px;
+    font-weight:500;
+    color:var(--muted);
+    margin-bottom:10px;
+    line-height:1.4;
+  }
+  .breadcrumb .bc-sep {
+    color:var(--border2);
+    user-select:none;
+    opacity:0.9;
+  }
+  #breadcrumb-current { color:var(--text); font-weight:500; }
+  .page-heading {
+    font-size:1.5rem;
+    font-weight:var(--heading-weight);
+    letter-spacing:-0.03em;
+    color:var(--text);
+    line-height:1.2;
+    margin:0;
   }
   main {
-    padding:32px;
-    padding-left:max(32px, env(safe-area-inset-left, 0px));
-    padding-right:max(32px, env(safe-area-inset-right, 0px));
-    padding-bottom:max(32px, env(safe-area-inset-bottom, 0px));
-    max-width:1600px; margin:0 auto; position:relative; z-index:1;
+    padding-top:18px;
+    flex:1;
+    position:relative;
   }
-  .logo { display:flex; flex-direction:column; align-items:flex-start; gap:2px; }
+  .logo { display:flex; flex-direction:column; align-items:flex-start; gap:4px; }
   .logo-mark {
-    font-family:var(--cond); font-size:28px; font-weight:900; letter-spacing:3px;
-    color:#fff; text-transform:uppercase; line-height:1;
+    font-family:var(--sans); font-size:1.35rem; font-weight:700; letter-spacing:-0.02em;
+    color:var(--text); line-height:1.2;
   }
   .logo-mark span {
     color:var(--accent);
-    text-shadow:0 0 32px rgba(46, 230, 168, 0.35);
+    font-weight:700;
   }
-  .logo-sub { font-family:var(--mono); font-size:9px; color:var(--muted); letter-spacing:4px; text-transform:uppercase; font-weight:500; }
+  .logo-sub { font-size:11px; color:var(--muted); letter-spacing:0.04em; text-transform:uppercase; font-weight:500; }
   .header-right { display:flex; align-items:center; gap:20px; }
   .live-badge {
     display:inline-flex; align-items:center; gap:8px;
-    font-family:var(--mono); font-size:10px; font-weight:600;
-    color:var(--accent); letter-spacing:3px;
+    font-size:11px; font-weight:600;
+    color:var(--text); letter-spacing:0.02em;
     padding:6px 12px; border-radius:999px;
-    background:var(--accent-dim); border:1px solid rgba(46, 230, 168, 0.25);
+    background:rgba(255,255,255,0.04); border:1px solid var(--border2);
   }
-  .live-dot { width:8px; height:8px; border-radius:50%; background:var(--accent);
-    box-shadow:0 0 12px var(--accent); animation:pulse 1.6s ease-in-out infinite; }
-  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.55;transform:scale(0.85)} }
+  .live-dot { width:7px; height:7px; border-radius:50%; background:var(--success);
+    box-shadow:0 0 0 2px rgba(16, 185, 129, 0.25); animation:pulse 2.2s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.65} }
   .clock {
     font-family:var(--mono); font-size:12px; font-weight:500;
     color:var(--muted); padding:8px 12px; border-radius:var(--radius-sm);
-    background:rgba(0,0,0,0.2); border:1px solid var(--border);
+    background:rgba(0,0,0,0.18); border:1px solid var(--border);
+    font-variant-numeric:tabular-nums;
   }
   .tab {
-    flex:0 0 auto; scroll-snap-align:start;
-    padding:14px 18px; font-family:var(--mono); font-size:10px; font-weight:600;
-    letter-spacing:1.5px; text-transform:uppercase; color:var(--muted);
-    cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-1px;
+    flex:0 0 auto;
+    padding:14px 16px; font-size:13px; font-weight:500;
+    letter-spacing:0; color:var(--muted);
+    cursor:pointer;
     transition:color 0.2s, border-color 0.2s, background 0.2s;
-    border-radius:var(--radius-sm) var(--radius-sm) 0 0;
     min-height:44px; display:inline-flex; align-items:center; justify-content:center;
     touch-action:manipulation;
-  }
-  .tab:hover { color:var(--text); background:rgba(255,255,255,0.03); }
-  .tab.active {
-    color:var(--accent);
-    border-bottom-color:var(--accent);
-    background:linear-gradient(180deg, rgba(46,230,168,0.08) 0%, transparent 100%);
   }
   .panel { display:none; animation:fadeIn 0.28s ease; }
   .panel.active { display:block; }
@@ -133,6 +241,7 @@
   @media (prefers-reduced-motion: reduce) { .panel { animation:none; } }
 
   .stats-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:32px; }
+  .stats-grid.summary-stats { grid-template-columns:repeat(3,1fr); margin-bottom:20px; }
   .stat-card {
     background:var(--surface-solid);
     border:1px solid var(--border);
@@ -148,13 +257,13 @@
     background:radial-gradient(120% 80% at 100% 0%, rgba(255,255,255,0.04), transparent 55%);
     border-radius:inherit;
   }
-  .stat-card:hover { transform:translateY(-2px); border-color:var(--border2); box-shadow:var(--shadow-md); }
-  .stat-card.green::before  { background:linear-gradient(180deg, var(--accent), rgba(46,230,168,0.4)); box-shadow:0 0 20px rgba(46,230,168,0.35); }
-  .stat-card.blue::before   { background:linear-gradient(180deg, var(--accent2), rgba(77,184,255,0.4)); box-shadow:0 0 20px rgba(77,184,255,0.25); }
-  .stat-card.orange::before { background:linear-gradient(180deg, var(--warn), rgba(255,176,32,0.45)); }
-  .stat-label { font-family:var(--mono); font-size:9px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:var(--muted); margin-bottom:12px; }
-  .stat-value { font-family:var(--cond); font-size:44px; font-weight:900; line-height:1; color:#fff; letter-spacing:-1px; }
-  .stat-card.green  .stat-value { color:var(--accent); }
+  .stat-card:hover { transform:translateY(-1px); border-color:var(--border2); box-shadow:var(--shadow-md); }
+  .stat-card.green::before  { background:var(--success); }
+  .stat-card.blue::before   { background:var(--accent); }
+  .stat-card.orange::before { background:var(--warn); }
+  .stat-label { font-size:12px; font-weight:500; letter-spacing:0.01em; color:var(--muted); margin-bottom:10px; }
+  .stat-value { font-family:var(--sans); font-size:2.25rem; font-weight:var(--heading-weight); line-height:1.15; color:var(--text); letter-spacing:-0.02em; font-variant-numeric:tabular-nums; }
+  .stat-card.green  .stat-value { color:var(--success); }
   .stat-card.blue   .stat-value { color:var(--accent2); }
   .stat-card.orange .stat-value { color:var(--warn); }
 
@@ -164,69 +273,75 @@
     border-radius:var(--radius);
     overflow:hidden;
     box-shadow:var(--shadow-sm);
+    max-width:100%;
+    min-width:0;
   }
   .table-header {
     display:flex; align-items:center; justify-content:space-between;
-    padding:16px 22px;
-    background:linear-gradient(180deg, rgba(255,255,255,0.04) 0%, transparent 100%);
+    padding:14px 20px;
+    background:rgba(0,0,0,0.15);
     border-bottom:1px solid var(--border);
   }
-  .table-title { font-family:var(--mono); font-size:10px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:var(--text); }
-  .table-meta { font-family:var(--mono); font-size:10px; color:var(--muted); }
+  .table-title { font-size:14px; font-weight:600; letter-spacing:0; color:var(--text); }
+  .table-meta { font-size:12px; color:var(--muted); }
   table { width:100%; border-collapse:collapse; }
   thead th {
-    padding:12px 22px; font-family:var(--mono); font-size:9px; font-weight:600;
-    letter-spacing:1.5px; text-transform:uppercase; color:var(--muted);
-    text-align:left; background:rgba(0,0,0,0.35); border-bottom:1px solid var(--border);
+    padding:11px 20px; font-size:11px; font-weight:600;
+    letter-spacing:0.02em; text-transform:none; color:var(--muted);
+    text-align:left; background:rgba(0,0,0,0.25); border-bottom:1px solid var(--border);
   }
   tbody tr { border-bottom:1px solid var(--border); transition:background 0.15s; }
   tbody tr:last-child { border-bottom:none; }
-  tbody tr:hover { background:rgba(46, 230, 168, 0.04); }
+  tbody tr:hover { background:rgba(59, 130, 246, 0.05); }
   tbody td { padding:14px 22px; font-size:14px; color:var(--text); }
-  .emp-name { font-weight:600; color:#fff; letter-spacing:-0.02em; }
+  .emp-name { font-weight:600; color:var(--text); letter-spacing:-0.02em; }
   .emp-id { font-family:var(--mono); font-size:11px; color:var(--muted); font-weight:500; }
   .time-val { font-family:var(--mono); font-size:12px; font-weight:500; color:var(--text); }
   .no-data {
     text-align:center; padding:48px 24px;
-    font-family:var(--mono); font-size:12px; font-weight:500;
-    color:var(--muted); letter-spacing:2px;
+    font-size:13px; font-weight:500;
+    color:var(--muted); letter-spacing:0;
   }
 
   .badge {
-    display:inline-block; padding:4px 10px; font-family:var(--mono); font-size:9px; font-weight:600;
-    letter-spacing:0.8px; text-transform:uppercase; border-radius:6px; white-space:nowrap;
+    display:inline-block; padding:4px 10px; font-family:var(--sans); font-size:10px; font-weight:600;
+    letter-spacing:0.04em; text-transform:uppercase; border-radius:4px; white-space:nowrap;
   }
-  .badge-in       { background:var(--accent-dim); color:var(--in); border:1px solid rgba(46,230,168,0.35); }
-  .badge-out      { background:var(--accent2-dim); color:var(--out); border:1px solid rgba(77,184,255,0.35); }
+  .badge-in       { background:var(--success-dim); color:var(--in); border:1px solid rgba(16,185,129,0.35); }
+  .badge-out      { background:var(--accent2-dim); color:var(--out); border:1px solid rgba(96,165,250,0.35); }
   .badge-ignored  { background:rgba(125,138,158,0.12); color:var(--muted); border:1px solid rgba(125,138,158,0.25); }
-  .badge-ontime   { background:var(--accent-dim); color:var(--accent); border:1px solid rgba(46,230,168,0.35); }
-  .badge-late     { background:rgba(255,92,122,0.12); color:var(--danger); border:1px solid rgba(255,92,122,0.35); }
-  .badge-earlyout { background:rgba(255,176,32,0.12); color:var(--warn); border:1px solid rgba(255,176,32,0.35); }
-  .badge-absent   { background:rgba(255,92,122,0.08); color:var(--danger); border:1px solid rgba(255,92,122,0.22); }
+  .badge-ontime   { background:var(--success-dim); color:var(--success); border:1px solid rgba(16,185,129,0.35); }
+  .badge-late     { background:rgba(239,68,68,0.12); color:var(--danger); border:1px solid rgba(239,68,68,0.35); }
+  .badge-earlyout { background:rgba(217,119,6,0.12); color:var(--warn); border:1px solid rgba(217,119,6,0.35); }
+  .badge-absent   { background:rgba(239,68,68,0.08); color:var(--danger); border:1px solid rgba(239,68,68,0.22); }
   .badge-notout   { background:rgba(125,138,158,0.1); color:var(--muted); border:1px solid rgba(125,138,158,0.22); }
   .badge-leftlate { background:rgba(179,102,255,0.12); color:#c99cff; border:1px solid rgba(179,102,255,0.35); }
   .badge-pending  { background:rgba(255,176,32,0.12); color:var(--warn); border:1px solid rgba(255,176,32,0.35); }
 
   .filter-row { display:flex; align-items:center; gap:14px; margin-bottom:22px; flex-wrap:wrap; }
-  .filter-label { font-family:var(--mono); font-size:10px; font-weight:600; letter-spacing:1.5px; color:var(--muted); text-transform:uppercase; }
+  .filter-label { font-size:12px; font-weight:600; letter-spacing:0; color:var(--muted); }
   input[type="date"],input[type="password"],input[type="text"],input[type="time"],input[type="number"],
-  select {
+  select, textarea {
     background:rgba(0,0,0,0.25); border:1px solid var(--border2); color:var(--text);
-    padding:10px 14px; font-family:var(--mono); font-size:12px; font-weight:500;
+    padding:10px 14px; font-family:var(--sans); font-size:13px; font-weight:400;
     outline:none; border-radius:var(--radius-sm);
     transition:border-color 0.2s, box-shadow 0.2s;
+    max-width:100%;
+    min-width:0;
   }
-  input:focus-visible, select:focus-visible {
+  textarea { resize:vertical; }
+  input:focus-visible, select:focus-visible, textarea:focus-visible {
     border-color:var(--accent);
-    box-shadow:0 0 0 3px rgba(46, 230, 168, 0.18);
+    box-shadow:0 0 0 3px rgba(59, 130, 246, 0.2);
   }
+  code { font-family:var(--mono); font-size:0.92em; word-break:break-word; }
   .refresh-btn {
-    background:rgba(255,255,255,0.04); border:1px solid var(--border2); color:var(--muted);
-    padding:10px 16px; font-family:var(--mono); font-size:10px; font-weight:600;
-    cursor:pointer; letter-spacing:1.5px; text-transform:uppercase;
+    background:rgba(255,255,255,0.04); border:1px solid var(--border2); color:var(--text);
+    padding:9px 14px; font-size:13px; font-weight:500;
+    cursor:pointer; letter-spacing:0;
     border-radius:var(--radius-sm); transition:all 0.2s;
   }
-  .refresh-btn:hover { border-color:var(--accent); color:var(--accent); background:rgba(46,230,168,0.06); }
+  .refresh-btn:hover { border-color:var(--accent); color:var(--accent); background:rgba(59,130,246,0.08); }
   .refresh-btn:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
 
   .legend {
@@ -234,7 +349,7 @@
     background:var(--surface-solid); border:1px solid var(--border);
     border-radius:var(--radius); align-items:center;
   }
-  .legend-item { display:flex; align-items:center; gap:8px; font-family:var(--mono); font-size:10px; color:var(--muted); letter-spacing:0.5px; }
+  .legend-item { display:flex; align-items:center; gap:8px; font-size:12px; color:var(--muted); letter-spacing:0; }
   .delta-late  { color:var(--danger); font-family:var(--mono); font-size:11px; font-weight:500; }
   .delta-early { color:var(--warn);   font-family:var(--mono); font-size:11px; font-weight:500; }
   .delta-ok    { color:var(--muted);  font-family:var(--mono); font-size:11px; }
@@ -244,7 +359,7 @@
     padding:20px 22px; margin-bottom:16px; border-radius:var(--radius);
     box-shadow:inset 0 1px 0 rgba(255,255,255,0.04);
   }
-  .shift-window-name { font-family:var(--cond); font-size:19px; font-weight:800; letter-spacing:2px; text-transform:uppercase; color:#fff; }
+  .shift-window-name { font-size:17px; font-weight:600; letter-spacing:-0.02em; text-transform:none; color:var(--text); }
   .shift-timeline { display:flex; height:38px; margin:16px 0; border-radius:var(--radius-sm); overflow:hidden; }
   .shift-segment {
     height:100%; display:flex; align-items:center; justify-content:center;
@@ -252,44 +367,44 @@
     text-transform:uppercase; text-align:center; line-height:1.35;
   }
   .seg-before   { background:rgba(125,138,158,0.1); color:var(--muted); flex:2; border:1px solid var(--border); }
-  .seg-checkin  { background:var(--accent-dim); color:var(--accent); flex:1; border:1px solid rgba(46,230,168,0.35); }
+  .seg-checkin  { background:var(--success-dim); color:var(--success); flex:1; border:1px solid rgba(16,185,129,0.35); }
   .seg-work     { background:rgba(0,0,0,0.25); color:var(--muted); flex:4; border:1px solid var(--border); font-size:7px; }
-  .seg-checkout { background:var(--accent2-dim); color:var(--accent2); flex:1; border:1px solid rgba(77,184,255,0.35); }
+  .seg-checkout { background:var(--accent2-dim); color:var(--accent2); flex:1; border:1px solid rgba(96,165,250,0.35); }
   .seg-after    { background:rgba(125,138,158,0.1); color:var(--muted); flex:2; border:1px solid var(--border); }
   .shift-times { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:10px; }
   .shift-edit-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:14px; }
 
   .admin-lock { text-align:center; padding:72px 24px; }
   .admin-lock-title {
-    font-family:var(--cond); font-size:24px; font-weight:800; letter-spacing:5px;
-    text-transform:uppercase; color:var(--muted); margin-bottom:24px;
+    font-size:1.25rem; font-weight:600; letter-spacing:-0.02em;
+    text-transform:none; color:var(--muted); margin-bottom:24px;
   }
   .input-row { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
 
   .btn {
-    padding:10px 22px; font-family:var(--mono); font-size:10px; font-weight:600;
-    letter-spacing:1.5px; text-transform:uppercase; cursor:pointer; border:none;
+    padding:10px 18px; font-size:13px; font-weight:600;
+    letter-spacing:0; text-transform:none; cursor:pointer; border:none;
     border-radius:var(--radius-sm); transition:transform 0.15s, box-shadow 0.2s, background 0.2s;
   }
   .btn:active { transform:scale(0.98); }
   .btn-primary {
-    background:linear-gradient(135deg, var(--accent) 0%, #1fc78f 100%);
-    color:#04120c; font-weight:700;
-    box-shadow:0 4px 20px rgba(46, 230, 168, 0.25);
+    background:var(--accent);
+    color:#fff; font-weight:600;
+    box-shadow:0 1px 2px rgba(0,0,0,0.2);
   }
-  .btn-primary:hover { filter:brightness(1.08); box-shadow:0 6px 28px rgba(46, 230, 168, 0.35); }
+  .btn-primary:hover { filter:brightness(1.06); box-shadow:0 4px 14px rgba(59, 130, 246, 0.35); }
   .btn-primary:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
   .btn-secondary {
     background:rgba(255,255,255,0.04); border:1px solid var(--border2); color:var(--text);
   }
-  .btn-secondary:hover { border-color:var(--accent); color:var(--accent); background:rgba(46,230,168,0.06); }
-  .btn-sm { padding:6px 14px; font-size:9px; }
+  .btn-secondary:hover { border-color:var(--accent); color:var(--accent); background:rgba(59,130,246,0.08); }
+  .btn-sm { padding:6px 12px; font-size:12px; }
   .form-group { margin-bottom:16px; }
-  .form-label { display:block; font-family:var(--mono); font-size:9px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:var(--muted); margin-bottom:8px; }
+  .form-label { display:block; font-size:12px; font-weight:600; letter-spacing:0; text-transform:none; color:var(--muted); margin-bottom:8px; }
   .form-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
   .section-title {
-    font-family:var(--mono); font-size:10px; font-weight:600; letter-spacing:2.5px;
-    text-transform:uppercase; color:var(--accent); margin-bottom:18px; padding-bottom:12px;
+    font-size:13px; font-weight:600; letter-spacing:0;
+    text-transform:none; color:var(--text); margin-bottom:18px; padding-bottom:12px;
     border-bottom:1px solid var(--border);
   }
   .admin-grid { display:grid; grid-template-columns:1fr 1fr; gap:24px; }
@@ -299,17 +414,17 @@
     gap:12px; margin-bottom:20px; flex-wrap:wrap;
   }
   .panel-toolbar h2 {
-    font-family:var(--cond); font-size:22px; font-weight:800; letter-spacing:2px;
-    text-transform:uppercase; color:var(--text); margin:0; line-height:1.2;
+    font-size:1.375rem; font-weight:var(--heading-weight); letter-spacing:-0.02em;
+    text-transform:none; color:var(--text); margin:0; line-height:1.25;
   }
   .panel-toolbar-actions { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
 
   .toast {
     position:fixed; bottom: max(28px, env(safe-area-inset-bottom, 0px)); right: max(16px, env(safe-area-inset-right, 0px)); left:auto;
     background:var(--surface-solid); backdrop-filter:blur(12px);
-    border:1px solid rgba(46,230,168,0.4); color:var(--accent);
-    padding:14px 22px; font-family:var(--mono); font-size:12px; font-weight:500;
-    letter-spacing:0.5px; border-radius:var(--radius);
+    border:1px solid var(--border2); color:var(--text);
+    padding:14px 20px; font-size:13px; font-weight:500;
+    letter-spacing:0; border-radius:var(--radius);
     opacity:0; transform:translateY(12px); transition:opacity 0.35s, transform 0.35s;
     z-index:9000; box-shadow:var(--shadow-md);
     max-width:min(420px, calc(100vw - 40px));
@@ -317,23 +432,73 @@
   .toast.show { opacity:1; transform:translateY(0); }
 
   @media(max-width:900px) {
-    .stats-grid { grid-template-columns:repeat(2,1fr); }
-    main {
-      padding:20px 16px;
+    .app-shell { flex-direction:column; }
+    .app-sidebar {
+      width:100%;
+      height:auto;
+      min-height:0;
+      position:relative;
+      border-right:none;
+      border-bottom:1px solid var(--border);
+      padding:14px 12px 10px;
+      padding-left:max(12px, env(safe-area-inset-left, 0px));
+      padding-right:max(12px, env(safe-area-inset-right, 0px));
+      overflow:visible;
+    }
+    .sidebar-brand {
+      border-bottom:none;
+      padding:0 4px 12px;
+      margin-bottom:0;
+    }
+    .sidebar-nav {
+      flex-direction:row;
+      overflow-x:auto;
+      overflow-y:hidden;
+      padding-top:0;
+      padding-bottom:4px;
+      gap:4px;
+      -webkit-overflow-scrolling:touch;
+      scrollbar-width:thin;
+      scroll-snap-type:x proximity;
+      overscroll-behavior-x:contain;
+    }
+    .sidebar-nav .tab {
+      flex:0 0 auto;
+      width:auto;
+      border-left:none;
+      border-bottom:2px solid transparent;
+      margin-bottom:-1px;
+      border-radius:var(--radius-sm) var(--radius-sm) 0 0;
+      padding:12px 14px;
+      scroll-snap-align:start;
+      white-space:nowrap;
+    }
+    .sidebar-nav .tab:hover { background:rgba(255,255,255,0.04); }
+    .sidebar-nav .tab.active {
+      border-left-color:transparent;
+      border-bottom-color:var(--accent);
+      background:rgba(59,130,246,0.08);
+    }
+    body.light .sidebar-nav .tab.active { background:rgba(37,99,235,0.08); }
+    .app-topbar {
+      padding:max(12px, env(safe-area-inset-top, 12px)) max(16px, env(safe-area-inset-right, 0px)) 12px max(16px, env(safe-area-inset-left, 0px));
+    }
+    .content-frame {
       padding-left:max(16px, env(safe-area-inset-left, 0px));
       padding-right:max(16px, env(safe-area-inset-right, 0px));
       padding-bottom:max(20px, env(safe-area-inset-bottom, 0px));
     }
-    header {
-      padding:max(14px, env(safe-area-inset-top, 14px)) max(16px, env(safe-area-inset-right, 0px)) 14px max(16px, env(safe-area-inset-left, 0px));
-    }
-    nav { padding:0 max(12px, env(safe-area-inset-right, 0px)) 0 max(12px, env(safe-area-inset-left, 0px)); }
+    .content-head { padding-top:18px; }
+    .page-heading { font-size:1.35rem; }
+    .stats-grid { grid-template-columns:repeat(2,1fr); }
+    .stats-grid.summary-stats { grid-template-columns:repeat(2,1fr); }
+    main { padding-top:16px; }
     .report-card { padding:20px 18px; }
   }
   @media(max-width:900px) { .admin-grid { grid-template-columns:1fr; } }
 
   @media(max-width:720px) {
-    .table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+    .table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; overscroll-behavior-x:contain; }
     .table-wrap > table { min-width:560px; }
     #panel-compliance .table-wrap > table { min-width:920px; }
     .table-header {
@@ -358,14 +523,45 @@
       right:max(12px, env(safe-area-inset-right, 0px));
       max-width:none;
     }
-    header {
-      flex-direction:column; align-items:stretch; gap:14px;
+    .app-topbar {
+      flex-direction:row;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+      align-items:center;
+      gap:8px 12px;
     }
     .header-right {
-      width:100%; justify-content:space-between; flex-wrap:wrap; gap:10px;
+      flex:1 1 auto;
+      min-width:0;
+      justify-content:flex-end;
+      flex-wrap:wrap;
+      gap:8px 10px;
     }
-    .logo-mark { font-size:22px; letter-spacing:2px; }
-    .logo-sub { font-size:8px; letter-spacing:3px; }
+    .live-badge { font-size:10px; padding:6px 10px; }
+    .clock { font-size:11px; padding:7px 10px; }
+    .filter-row {
+      flex-direction:column;
+      align-items:stretch;
+      gap:10px;
+    }
+    .filter-row .filter-label { margin-bottom:-4px; }
+    .filter-row input[type="date"],
+    .filter-row input[type="text"],
+    .filter-row input[type="number"],
+    .filter-row select {
+      width:100%;
+      max-width:100%;
+    }
+    .filter-row .refresh-btn { width:100%; max-width:100%; }
+    .filter-row input#report-year { width:100% !important; max-width:100%; }
+    .legend {
+      flex-direction:column;
+      align-items:flex-start;
+      gap:10px;
+    }
+    .panel-toolbar h2 { font-size:1.2rem; }
+    .sidebar-brand .logo-mark { font-size:1.2rem; }
+    .sidebar-brand .logo-sub { font-size:10px; }
     .form-grid-2 { grid-template-columns:1fr; }
     .shift-times { grid-template-columns:1fr; }
     .shift-edit-grid { grid-template-columns:1fr; }
@@ -403,41 +599,64 @@
 
   @media(max-width:520px) {
     .stats-grid { grid-template-columns:1fr; gap:12px; }
-    main {
-      padding:16px 12px;
+    .content-frame {
       padding-left:max(12px, env(safe-area-inset-left, 0px));
       padding-right:max(12px, env(safe-area-inset-right, 0px));
-      padding-bottom:max(16px, env(safe-area-inset-bottom, 0px));
+      padding-bottom:max(20px, env(safe-area-inset-bottom, 12px));
     }
-    .stat-card { padding:18px 16px; }
-    .stat-value { font-size:32px; }
+    .content-head { padding-top:14px; }
+    .breadcrumb { font-size:11px; gap:4px; }
+    .page-heading { font-size:1.2rem; }
+    .stat-card { padding:16px 14px; }
+    .stat-value { font-size:28px; }
     body { font-size:14px; }
     .refresh-btn, .btn { min-height:44px; }
+    .sidebar-nav .tab { font-size:12px; padding:10px 12px; min-height:42px; }
+    thead th, tbody td { padding:10px 12px; font-size:12px; }
+    .table-title { font-size:13px; }
+    .table-header { padding:12px 14px; }
+    input[type="date"], input[type="password"], input[type="text"], input[type="time"],
+    input[type="number"], select, textarea {
+      font-size:16px;
+      min-height:44px;
+    }
+    textarea { min-height:120px; }
+    .theme-toggle { width:44px; height:44px; min-width:44px; min-height:44px; }
+    .export-btns .btn-excel, .export-btns .btn-pdf { width:100%; justify-content:center; }
+  }
+
+  @media(max-width:400px) {
+    .sidebar-nav .tab { font-size:11px; padding:9px 10px; }
+    .logo-mark { font-size:1.15rem; }
+    .page-heading { font-size:1.1rem; }
+    .stat-value { font-size:26px; }
   }
 
   /* ── LIGHT MODE ── */
   body.light {
-    --bg:         #eef1f6;
-    --bg-elevated:#e4e8f0;
-    --surface:    rgba(255, 255, 255, 0.82);
+    --bg:          #f1f5f9;
+    --bg-elevated: #e2e8f0;
+    --surface:     rgba(255, 255, 255, 0.92);
     --surface-solid:#ffffff;
-    --border:     rgba(15, 23, 42, 0.08);
-    --border2:    rgba(15, 23, 42, 0.14);
-    --text:       #1e293b;
-    --muted:      #64748b;
-    --accent:     #059669;
-    --accent-dim: rgba(5, 150, 105, 0.12);
-    --accent2:    #0369a1;
-    --accent2-dim:rgba(3, 105, 161, 0.1);
-    --warn:       #b45309;
-    --danger:     #be123c;
-    --in:         #059669;
-    --out:        #0369a1;
+    --border:      rgba(15, 23, 42, 0.08);
+    --border2:     rgba(15, 23, 42, 0.12);
+    --text:        #0f172a;
+    --muted:       #64748b;
+    --accent:      #2563eb;
+    --accent-dim:  rgba(37, 99, 235, 0.1);
+    --accent2:     #3b82f6;
+    --accent2-dim: rgba(59, 130, 246, 0.1);
+    --success:     #059669;
+    --success-dim: rgba(5, 150, 105, 0.1);
+    --warn:        #b45309;
+    --danger:      #dc2626;
+    --in:          #059669;
+    --out:         #2563eb;
   }
   body.light {
     background-image:
-      radial-gradient(ellipse 90% 60% at 10% 0%, rgba(5, 150, 105, 0.08), transparent 50%),
-      radial-gradient(ellipse 70% 50% at 100% 20%, rgba(3, 105, 161, 0.06), transparent 50%);
+      radial-gradient(ellipse 100% 70% at 0% 0%, rgba(37, 99, 235, 0.06), transparent 55%),
+      radial-gradient(ellipse 80% 50% at 100% 0%, rgba(15, 23, 42, 0.04), transparent 45%);
   }
   body.light::before {
     background:repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(15,23,42,0.03) 2px, rgba(15,23,42,0.03) 4px);
@@ -445,11 +664,12 @@
   body.light .logo-mark span { text-shadow:none; }
   body.light .seg-before, body.light .seg-after { background: rgba(15,23,42,0.05); }
   body.light .seg-work  { background: rgba(15,23,42,0.04); }
-  body.light tbody tr:hover { background: rgba(5, 150, 105, 0.06); }
+  body.light tbody tr:hover { background: rgba(37, 99, 235, 0.06); }
   body.light thead th { background: rgba(15,23,42,0.04); }
   body.light .shift-window { background: #f8fafc; }
   body.light input[type="date"], body.light input[type="password"], body.light input[type="text"],
-  body.light input[type="time"], body.light input[type="number"], body.light select {
+  body.light input[type="time"], body.light input[type="number"], body.light select,
+  body.light textarea {
     background:#fff;
   }
   body.light .clock { background:rgba(15,23,42,0.04); }
@@ -466,7 +686,7 @@
     display:flex; align-items:center; justify-content:center;
     transition:all 0.2s; border-radius:var(--radius-sm);
   }
-  .theme-toggle:hover { border-color:var(--accent); color:var(--accent); background:rgba(46,230,168,0.08); }
+  .theme-toggle:hover { border-color:var(--accent); color:var(--accent); background:rgba(59,130,246,0.1); }
   .theme-toggle:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
   body.light .theme-toggle { background:#fff; }
 
@@ -484,8 +704,8 @@
     font-size:14px; transition:background 0.12s;
   }
   .emp-dropdown-item:last-child { border-bottom:none; }
-  .emp-dropdown-item:hover { background:rgba(46,230,168,0.08); }
-  body.light .emp-dropdown-item:hover { background:rgba(5,150,105,0.08); }
+  .emp-dropdown-item:hover { background:rgba(59,130,246,0.08); }
+  body.light .emp-dropdown-item:hover { background:rgba(37,99,235,0.08); }
   .emp-dropdown-item .emp-dropdown-id { font-family:var(--mono); font-size:11px; color:var(--muted); font-weight:500; }
 
   /* ── REPORT TAB ── */
@@ -495,10 +715,10 @@
     box-shadow:var(--shadow-sm);
   }
   .report-title {
-    font-family:var(--cond); font-size:20px; font-weight:800; letter-spacing:2px;
-    text-transform:uppercase; color:var(--text); margin-bottom:8px;
+    font-size:1.125rem; font-weight:var(--heading-weight); letter-spacing:-0.02em;
+    text-transform:none; color:var(--text); margin-bottom:8px;
   }
-  .report-desc { font-family:var(--mono); font-size:11px; font-weight:500; color:var(--muted); margin-bottom:20px; }
+  .report-desc { font-size:13px; font-weight:400; color:var(--muted); margin-bottom:20px; line-height:1.5; }
   .export-btns { display:flex; gap:12px; flex-wrap:wrap; }
   .btn-excel {
     background:rgba(16, 185, 129, 0.12); border:1px solid rgba(16, 185, 129, 0.45);
@@ -510,7 +730,12 @@
     color:var(--danger); border-radius:var(--radius-sm);
   }
   .btn-pdf:hover { background:rgba(244, 63, 94, 0.18); }
-  .report-preview { margin-top:18px; border:1px solid var(--border); overflow:hidden; border-radius:var(--radius-sm); }
+  .report-preview {
+    margin-top:18px; border:1px solid var(--border); overflow:hidden; overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    border-radius:var(--radius-sm);
+    max-width:100%;
+  }
   .preview-row { display:grid; gap:0; }
   .preview-row.daily-grid   { grid-template-columns: 2fr 2fr 1fr 1fr 1fr 1.5fr 1.5fr 1fr; }
   .preview-row.monthly-grid { grid-template-columns: 1fr 1.5fr 2fr 1fr 1fr 1fr 1.5fr 1.5fr; }
@@ -543,8 +768,8 @@
   @keyframes modalIn { from { opacity:0; transform:scale(0.96) translateY(8px); } to { opacity:1; transform:none; } }
   @media (prefers-reduced-motion: reduce) { .modal { animation:none; } }
   .modal-title {
-    font-family:var(--cond); font-size:22px; font-weight:800; letter-spacing:2px;
-    text-transform:uppercase; color:var(--text); margin-bottom:22px; padding-right:36px;
+    font-size:1.25rem; font-weight:var(--heading-weight); letter-spacing:-0.02em;
+    text-transform:none; color:var(--text); margin-bottom:22px; padding-right:36px;
   }
   .modal-close {
     position:absolute; top:18px; right:18px;
@@ -579,26 +804,45 @@
 </head>
 <body>
 
-<header>
-  <div class="logo">
-    <div class="logo-mark">Smart<span>Pay</span></div>
-    <div class="logo-sub">Attendance Control</div>
-  </div>
-  <div class="header-right">
-    <div class="live-badge"><div class="live-dot"></div>LIVE</div>
-    <div class="clock" id="clock">--:--:--</div>
-    <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark mode">🌙</button>
-  </div>
-</header>
+<div class="app-shell">
+  <aside class="app-sidebar" aria-label="Application navigation">
+    <div class="sidebar-brand">
+      <div class="logo">
+        <div class="logo-mark">Smart<span>Pay</span></div>
+        <div class="logo-sub">Attendance</div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="tab active" onclick="showTab('live')"       id="tab-live">Live feed</div>
+      <div class="tab"        onclick="showTab('compliance')" id="tab-compliance">Compliance</div>
+      <div class="tab"        onclick="showTab('summary')"    id="tab-summary">Daily summary</div>
+      <div class="tab"        onclick="showTab('employees')"  id="tab-employees">Employees</div>
+      <div class="tab"        onclick="showTab('reports')"    id="tab-reports">Reports</div>
+      <div class="tab"        onclick="showTab('sms')"       id="tab-sms">SMS</div>
+      <div class="tab"        onclick="showTab('admin')"      id="tab-admin">Administration</div>
+    </nav>
+  </aside>
 
-<nav>
-  <div class="tab active" onclick="showTab('live')"       id="tab-live">Live Feed</div>
-  <div class="tab"        onclick="showTab('compliance')" id="tab-compliance">Compliance</div>
-  <div class="tab"        onclick="showTab('summary')"    id="tab-summary">Daily Summary</div>
-  <div class="tab"        onclick="showTab('employees')"  id="tab-employees">Employees</div>
-  <div class="tab"        onclick="showTab('reports')"    id="tab-reports">Reports</div>
-  <div class="tab"        onclick="showTab('admin')"      id="tab-admin">⚙ Admin</div>
-</nav>
+  <div class="app-main">
+    <header class="app-topbar">
+      <div class="header-right">
+        <div class="live-badge"><div class="live-dot"></div>Live</div>
+        <div class="clock" id="clock">--:--:--</div>
+        <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark mode">🌙</button>
+      </div>
+    </header>
+
+    <div class="content-frame">
+      <div class="content-head">
+        <nav class="breadcrumb" aria-label="Breadcrumb">
+          <span>SmartPay</span>
+          <span class="bc-sep" aria-hidden="true">/</span>
+          <span>Attendance</span>
+          <span class="bc-sep" aria-hidden="true">/</span>
+          <span id="breadcrumb-current">Live feed</span>
+        </nav>
+        <h1 class="page-heading" id="page-heading">Live feed</h1>
+      </div>
 
 <main>
 
@@ -659,6 +903,14 @@
       <input type="date" id="summary-date">
       <button type="button" class="refresh-btn" onclick="loadSummary()">↺ Refresh</button>
     </div>
+    <p class="emp-id" style="margin:-8px 0 14px;line-height:1.55;max-width:52rem">
+      Totals below use the same rules as Compliance: on-time first scan (check-in window) and on-time last scan (checkout window), with at least two scans. Amounts sum each eligible employee’s current daily rate from Administration.
+    </p>
+    <div class="stats-grid summary-stats">
+      <div class="stat-card"><div class="stat-label">With attendance</div><div class="stat-value" id="summary-stat-scans">—</div></div>
+      <div class="stat-card green"><div class="stat-label">Eligible for payment</div><div class="stat-value" id="summary-stat-eligible">—</div></div>
+      <div class="stat-card orange"><div class="stat-label">Total to pay (TZS)</div><div class="stat-value" id="summary-stat-payout" style="font-size:clamp(22px,4vw,32px)">—</div></div>
+    </div>
     <div class="table-wrap">
       <div class="table-header">
         <div class="table-title" id="summary-title">Daily Summary</div>
@@ -671,6 +923,91 @@
     </div>
   </div>
 
+  <!-- SMS (logs + template — requires admin session) -->
+  <div class="panel" id="panel-sms">
+    <div id="sms-gate" class="table-wrap" style="padding:28px;max-width:520px;margin:0 auto">
+      <div class="section-title" style="margin-bottom:12px">SMS — admin only</div>
+      <p class="emp-id" style="line-height:1.6;margin-bottom:16px">
+        Eligibility SMS history and the message template are available after you sign in with the
+        <strong>same password</strong> as the Administration tab. You can also unlock Administration first, then return here.
+      </p>
+      <div class="input-row" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <input type="password" id="sms-gate-pw" placeholder="Administrator password" style="flex:1;min-width:200px;padding:10px 12px;border:1px solid var(--border);background:var(--panel);color:var(--text);border-radius:var(--radius-sm)">
+        <button type="button" class="btn btn-primary" onclick="smsGateLogin()">Unlock SMS</button>
+      </div>
+      <div id="sms-gate-error" style="color:var(--danger);font-family:var(--mono);font-size:11px;margin-top:12px"></div>
+    </div>
+
+    <div id="sms-main" style="display:none">
+      <div class="panel-toolbar">
+        <h2>SMS log &amp; template</h2>
+        <div class="panel-toolbar-actions">
+          <button type="button" class="refresh-btn" onclick="loadSmsSettings(); loadSmsLogs(smsLogsPage)">↺ Refresh all</button>
+          <button type="button" class="refresh-btn" onclick="adminLogout()" title="End administrator session (SMS + Administration)">Sign out</button>
+        </div>
+      </div>
+
+      <div class="table-wrap" style="padding:22px;margin-bottom:20px">
+        <div class="section-title" style="margin-bottom:10px">How to edit the message template</div>
+        <ol class="emp-id" style="line-height:1.65;margin:0 0 16px 18px;padding:0;max-width:56rem">
+          <li>Type your SMS text in the box below. Keep it short (one SMS is ~160 characters in many networks).</li>
+          <li>Use <strong>placeholders</strong> exactly as written — they are replaced when the message is sent:
+            <code>{name}</code> employee name,
+            <code>{amount}</code> daily rate number,
+            <code>{date}</code> work date,
+            <code>{currency}</code> usually TZS.
+          </li>
+          <li>Click <strong>Save template</strong>. New eligibility messages will use the saved text.</li>
+          <li>Leave the box empty and save to use the <strong>built-in default</strong> again (see hint under the box).</li>
+        </ol>
+        <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 16px;margin-bottom:16px;background:var(--surface)">
+          <div class="form-label" style="margin-bottom:8px">Examples (copy and change wording as you like)</div>
+          <ul class="emp-id" style="margin:0;padding-left:18px;line-height:1.55;font-family:var(--mono);font-size:11px">
+            <li>Hi {name}, shift completed on time. Payment eligible: {amount} {currency}. {date}.</li>
+            <li>SmartPay: {name}, you are eligible for {amount} {currency} for {date}. Thank you.</li>
+            <li>{name} — On-time attendance confirmed. Eligible amount {amount} {currency} ({date}).</li>
+          </ul>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Your template</label>
+          <textarea id="sms-template-input" rows="5" style="width:100%;font-family:var(--mono);font-size:12px" placeholder="Leave empty for default, or write your message with {name} {amount} {date} {currency}"></textarea>
+        </div>
+        <div id="sms-template-default-hint" class="emp-id" style="margin-bottom:12px;font-size:11px;line-height:1.5"></div>
+        <button type="button" class="btn btn-primary" onclick="saveSmsTemplate()">Save template</button>
+      </div>
+
+      <div class="table-wrap" style="margin-bottom:20px">
+        <div class="section-title" style="padding:16px 16px 0">Status guide</div>
+        <p class="emp-id" style="padding:0 16px 12px;line-height:1.55;max-width:52rem">
+          <strong>sent</strong> — accepted by Textify. <strong>delivered</strong> / <strong>pending</strong> / <strong>sending</strong> — from Textify or your webhook.
+          <strong>failed</strong> — not sent or rejected; see the Error column. One row per employee per work day; failed rows can retry on the next poller run if the employee is still eligible.
+        </p>
+        <div class="table-header" style="flex-wrap:wrap;gap:10px;padding:12px 16px;border-top:1px solid var(--border)">
+          <div class="table-title">Sent messages</div>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <input type="date" id="sms-log-date" style="padding:8px;border:1px solid var(--border);background:var(--panel);color:var(--text);border-radius:var(--radius-sm)">
+            <input type="text" id="sms-log-eid" placeholder="Employee ID" style="padding:8px;width:130px;border:1px solid var(--border);background:var(--panel);color:var(--text);border-radius:var(--radius-sm)">
+            <button type="button" class="refresh-btn" onclick="loadSmsLogs(1)">↺ Refresh</button>
+          </div>
+        </div>
+        <div id="sms-log-meta" class="emp-id" style="padding:8px 16px"></div>
+        <div class="table-wrap" style="overflow:auto;border-top:none">
+          <table style="min-width:920px">
+            <thead>
+              <tr>
+                <th>Sent</th><th>Work date</th><th>Employee</th><th>Phone</th><th>Amount</th><th>Message</th><th>Textify ID</th><th>Status</th><th>Error</th>
+              </tr>
+            </thead>
+            <tbody id="sms-log-body"><tr><td colspan="9" class="no-data">Loading…</td></tr></tbody>
+          </table>
+        </div>
+        <div style="display:flex;gap:12px;align-items:center;padding:12px 16px">
+          <button type="button" class="btn btn-secondary btn-sm" id="sms-log-prev" onclick="loadSmsLogs(smsLogsPage - 1)">Previous</button>
+          <button type="button" class="btn btn-secondary btn-sm" id="sms-log-next" onclick="loadSmsLogs(smsLogsPage + 1)">Next</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- EMPLOYEES -->
   <div class="panel" id="panel-employees">
@@ -680,6 +1017,9 @@
         <button type="button" class="refresh-btn" onclick="loadEmployeeTab()">↺ Refresh</button>
         <button type="button" class="btn btn-primary" onclick="openEmpModal()">+ Add Employee</button>
       </div>
+      <p class="emp-id" style="width:100%;margin:10px 0 0;line-height:1.55;max-width:56rem">
+        Lists everyone who has ever swiped: distinct IDs from <strong>attlog</strong> (device feed) and <strong>attendance_log</strong> (processed scans), with no date limit. HR fields come from the register when present.
+      </p>
     </div>
     <div class="table-wrap">
       <table>
@@ -830,7 +1170,7 @@
   <div class="panel" id="panel-admin">
     <div id="admin-lock">
       <div class="admin-lock">
-        <div class="admin-lock-title">// Admin Access Required</div>
+        <div class="admin-lock-title">Administrator access required</div>
         <div class="input-row">
           <input type="password" id="admin-pw-input" placeholder="Enter admin password" style="width:260px">
           <button class="btn btn-primary" onclick="adminLogin()">Unlock</button>
@@ -897,16 +1237,70 @@
           <tbody id="emp-body"><tr><td colspan="5" class="no-data">LOADING...</td></tr></tbody>
         </table>
       </div>
+      <p class="emp-id" style="padding:12px 22px 22px;line-height:1.55;max-width:48rem;border-top:1px solid var(--border)">
+        <strong>SMS</strong> log and eligibility message template are on the <strong>SMS</strong> tab (same admin password).
+      </p>
     </div>
   </div>
 
 </main>
+    </div><!-- .content-frame -->
+  </div><!-- .app-main -->
+</div><!-- .app-shell -->
+
 <div class="toast" id="toast"></div>
 
 <script>
 const BASE = '';
 const ADMIN_SESSION_KEY = 'smartpay-admin-session';
+const TAB_LABELS = {
+  live: 'Live feed',
+  compliance: 'Compliance',
+  summary: 'Daily summary',
+  employees: 'Employees',
+  reports: 'Reports',
+  sms: 'SMS',
+  admin: 'Administration'
+};
 let adminToken = '';
+let smsLogsPage = 1;
+
+function updateSmsPanelGate() {
+  const gate = document.getElementById('sms-gate');
+  const main = document.getElementById('sms-main');
+  if (!gate || !main) return;
+  if (adminToken) {
+    gate.style.display = 'none';
+    main.style.display = 'block';
+  } else {
+    gate.style.display = 'block';
+    main.style.display = 'none';
+    const ge = document.getElementById('sms-gate-error');
+    if (ge) ge.textContent = '';
+  }
+}
+
+async function smsGateLogin() {
+  const pwEl = document.getElementById('sms-gate-pw');
+  const pw = pwEl ? pwEl.value : '';
+  const errEl = document.getElementById('sms-gate-error');
+  if (!pw) {
+    if (errEl) errEl.textContent = 'Enter the admin password';
+    return;
+  }
+  try {
+    const r = await fetch(BASE + '/api/admin/shifts', { headers: { 'x-admin-token': pw } });
+    if (!r.ok) {
+      if (errEl) errEl.textContent = 'Incorrect password';
+      return;
+    }
+    if (errEl) errEl.textContent = '';
+    unlockAdmin(pw);
+    if (pwEl) pwEl.value = '';
+  } catch (e) {
+    if (errEl) errEl.textContent = 'Connection error';
+  }
+}
 
 function unlockAdmin(pw) {
   adminToken = pw;
@@ -915,6 +1309,8 @@ function unlockAdmin(pw) {
   document.getElementById('admin-content').style.display = 'block';
   document.getElementById('admin-pw-error').textContent = '';
   loadShiftConfig(); loadEmployees(); loadEmployeeTab();
+  loadSmsSettings(); loadSmsLogs(1);
+  updateSmsPanelGate();
 }
 
 function adminLogout() {
@@ -924,9 +1320,12 @@ function adminLogout() {
   document.getElementById('admin-content').style.display = 'none';
   const inp = document.getElementById('admin-pw-input');
   if (inp) inp.value = '';
+  const smsPw = document.getElementById('sms-gate-pw');
+  if (smsPw) smsPw.value = '';
   document.getElementById('admin-pw-error').textContent = '';
   loadEmployeeTab();
-  toast('Admin session ended');
+  updateSmsPanelGate();
+  toast('Administrator session ended');
 }
 
 async function restoreAdminSession() {
@@ -953,9 +1352,25 @@ function showTab(name) {
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   document.getElementById('panel-'+name).classList.add('active');
   document.getElementById('tab-'+name).classList.add('active');
+  const label = TAB_LABELS[name] || name;
+  const ph = document.getElementById('page-heading');
+  const bc = document.getElementById('breadcrumb-current');
+  if (ph) ph.textContent = label;
+  if (bc) bc.textContent = label;
   if (name === 'employees') loadEmployeeTab();
   if (name === 'compliance') loadCompliance();
   if (name === 'summary') loadSummary();
+  if (name === 'sms') {
+    updateSmsPanelGate();
+    if (adminToken) {
+      loadSmsSettings();
+      loadSmsLogs(smsLogsPage);
+    }
+  }
+  if (name === 'admin' && adminToken) {
+    loadShiftConfig();
+    loadEmployees();
+  }
   if (name === 'reports') {
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('report-daily-date').value = today;
@@ -974,8 +1389,16 @@ function toast(msg,ok=true) {
 }
 
 function fmtTime(ts) {
-  if(!ts) return '—';
-  return new Date(ts).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  if (ts == null || ts === '') return '—';
+  const s = String(ts).trim();
+  // API returns DB wall clock via TO_CHAR('HH24:MI:SS'); show unchanged.
+  if (/^\d{2}:\d{2}:\d{2}$/.test(s)) return s;
+  if (/^\d{2}:\d{2}$/.test(s)) return s + ':00';
+  const d = new Date(s);
+  if (Number.isNaN(d.getTime())) return '—';
+  const p = (n) => String(n).padStart(2, '0');
+  // Legacy ISO from JSON Date: use UTC clock face only — never the browser timezone.
+  return `${p(d.getUTCHours())}:${p(d.getUTCMinutes())}:${p(d.getUTCSeconds())}`;
 }
 function fmtName(row) {
   const dn = row.display_name != null && String(row.display_name).trim() !== '' ? String(row.display_name).trim() : '';
@@ -1086,34 +1509,66 @@ async function loadSummary() {
     d = todayIsoDate();
     el.value = d;
   }
-  try {
-    const j=await(await fetch(BASE+'/api/attendance/summary?date='+d)).json();
-    document.getElementById('summary-title').textContent='Summary — '+d;
-    const tbody=document.getElementById('summary-body');
-    if(!j.success||!j.data.length){
-      document.getElementById('summary-count').textContent='0 employees';
-      tbody.innerHTML='<tr><td colspan="6" class="no-data">NO DATA FOR THIS DATE</td></tr>';return;
+  const setSummaryTotals = (t) => {
+    const scans = document.getElementById('summary-stat-scans');
+    const elig = document.getElementById('summary-stat-eligible');
+    const pay = document.getElementById('summary-stat-payout');
+    if (!t) {
+      if (scans) scans.textContent = '—';
+      if (elig) elig.textContent = '—';
+      if (pay) pay.textContent = '—';
+      return;
     }
-    document.getElementById('summary-count').textContent=j.data.length+' employees';
-    tbody.innerHTML=j.data.map(row=>{
-      const pay=row.payment_triggered?'<span class="badge badge-ontime">Queued</span>':'<span class="badge badge-pending">Pending</span>';
+    if (scans) scans.textContent = String(t.employees_with_scans ?? 0);
+    if (elig) elig.textContent = String(t.eligible_count ?? 0);
+    if (pay) {
+      const n = Number(t.eligible_total_amount);
+      pay.textContent = (Number.isFinite(n) ? n : 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 }) + ' TZS';
+    }
+  };
+  try {
+    const j = await (await fetch(BASE + '/api/attendance/summary?date=' + encodeURIComponent(d))).json();
+    document.getElementById('summary-title').textContent = 'Summary — ' + d;
+    const tbody = document.getElementById('summary-body');
+    const totals = j.totals || { employees_with_scans: 0, eligible_count: 0, eligible_total_amount: 0 };
+    if (!j.success) {
+      setSummaryTotals(null);
+      toast('Failed to load summary', false);
+      tbody.innerHTML = '<tr><td colspan="6" class="no-data">Could not load summary</td></tr>';
+      return;
+    }
+    setSummaryTotals(totals);
+    if (!j.data || !j.data.length) {
+      document.getElementById('summary-count').textContent = '0 with attendance';
+      tbody.innerHTML = '<tr><td colspan="6" class="no-data">NO DATA FOR THIS DATE</td></tr>';
+      return;
+    }
+    document.getElementById('summary-count').textContent = j.data.length + ' with attendance';
+    tbody.innerHTML = j.data.map((row) => {
+      const pay = row.payment_triggered
+        ? '<span class="badge badge-ontime">Queued</span>'
+        : '<span class="badge badge-pending">Pending</span>';
       const nm = fmtName(row);
       const n = Number(row.total_events) || 0;
       const eidAttr = encodeURIComponent(String(row.employee_id));
       const nameAttr = encodeURIComponent(nm);
-      const scansCell = n > 0
-        ? `<button type="button" class="scan-link" data-scan-eid="${eidAttr}" data-scan-name="${nameAttr}" title="View all scans">${n}</button>`
-        : `<span class="emp-id">0</span>`;
+      const scansCell =
+        n > 0
+          ? `<button type="button" class="scan-link" data-scan-eid="${eidAttr}" data-scan-name="${nameAttr}" title="View all scans">${n}</button>`
+          : `<span class="emp-id">0</span>`;
       return `<tr>
         <td><div class="emp-name">${nm}</div><div class="emp-id">${row.employee_id}</div></td>
-        <td><span class="time-val">${row.phonenumber||'—'}</span></td>
+        <td><span class="time-val">${row.phonenumber || '—'}</span></td>
         <td><span class="time-val">${fmtTime(row.check_in)}</span></td>
         <td><span class="time-val">${fmtTime(row.check_out)}</span></td>
         <td>${scansCell}</td>
         <td>${pay}</td>
       </tr>`;
     }).join('');
-  } catch(e){toast('Failed to load summary',false);}
+  } catch (e) {
+    setSummaryTotals(null);
+    toast('Failed to load summary', false);
+  }
 }
 
 function closeScansModal() {
@@ -1183,8 +1638,13 @@ function adminLogin() {
   });
 }
 document.addEventListener('keydown',e=>{
-  if(e.key!=='Enter'||!document.getElementById('panel-admin').classList.contains('active')) return;
-  if(adminToken) return;
+  if (e.key !== 'Enter') return;
+  if (document.getElementById('panel-sms') && document.getElementById('panel-sms').classList.contains('active') && !adminToken) {
+    smsGateLogin();
+    return;
+  }
+  if (!document.getElementById('panel-admin').classList.contains('active')) return;
+  if (adminToken) return;
   adminLogin();
 });
 
@@ -1206,7 +1666,7 @@ async function loadShiftConfig() {
   if(!j.success) return;
   const defId = j.default_shift_id != null ? Number(j.default_shift_id) : 1;
   const globalPanel = `
-    <div class="shift-window" style="margin-bottom:20px;border-color:rgba(46,230,168,0.28)">
+    <div class="shift-window" style="margin-bottom:20px;border-color:rgba(59,130,246,0.25)">
       <div class="shift-window-name" style="font-size:17px;letter-spacing:1px">Company default shift</div>
       <p class="emp-id" style="margin-top:10px;line-height:1.55;max-width:52rem">Everyone without an individual shift uses this for compliance, reports, and new swipes. Assign a different shift on an employee only when they need an override.</p>
       <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:14px">
@@ -1332,7 +1792,98 @@ async function loadEmployees() {
   </tr>`).join('');
 }
 
+function escHtml(s) {
+  if (s == null) return '';
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
 
+async function loadSmsSettings() {
+  if (!adminToken) return;
+  try {
+    const r = await fetch(BASE + '/api/admin/settings/sms-template', { headers: { 'x-admin-token': adminToken } });
+    const j = await r.json();
+    const ta = document.getElementById('sms-template-input');
+    const hint = document.getElementById('sms-template-default-hint');
+    if (!ta || !j.success) return;
+    ta.value = (j.data && j.data.template) || '';
+    if (hint && j.data && j.data.default_template) {
+      hint.textContent = 'Default (if empty): ' + j.data.default_template;
+    }
+  } catch (e) {}
+}
+
+async function saveSmsTemplate() {
+  if (!adminToken) return;
+  const template = document.getElementById('sms-template-input').value;
+  const r = await fetch(BASE + '/api/admin/settings/sms-template', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', 'x-admin-token': adminToken },
+    body: JSON.stringify({ template }),
+  });
+  const j = await r.json();
+  toast(j.success ? 'SMS template saved' : (j.error || 'Failed'), j.success);
+}
+
+async function loadSmsLogs(page) {
+  if (!adminToken) return;
+  const tbody = document.getElementById('sms-log-body');
+  const meta = document.getElementById('sms-log-meta');
+  const prevBtn = document.getElementById('sms-log-prev');
+  const nextBtn = document.getElementById('sms-log-next');
+  if (!tbody) return;
+  const p = Math.max(1, page || 1);
+  smsLogsPage = p;
+  const dateEl = document.getElementById('sms-log-date');
+  const eidEl = document.getElementById('sms-log-eid');
+  const date = dateEl && dateEl.value ? dateEl.value : '';
+  const eid = eidEl && eidEl.value.trim() ? eidEl.value.trim() : '';
+  let url = BASE + '/api/admin/sms-logs?page=' + p + '&limit=25';
+  if (date) url += '&date=' + encodeURIComponent(date);
+  if (eid) url += '&employee_id=' + encodeURIComponent(eid);
+  tbody.innerHTML = '<tr><td colspan="9" class="no-data">Loading…</td></tr>';
+  try {
+    const r = await fetch(url, { headers: { 'x-admin-token': adminToken } });
+    const j = await r.json();
+    if (!j.success) {
+      tbody.innerHTML = '<tr><td colspan="9" class="no-data">' + escHtml(j.error || 'Error') + '</td></tr>';
+      return;
+    }
+    const total = j.total || 0;
+    const limit = j.limit || 25;
+    const pages = Math.max(1, Math.ceil(total / limit));
+    if (meta) meta.textContent = 'Page ' + p + ' of ' + pages + ' — ' + total + ' row(s)';
+    if (prevBtn) prevBtn.disabled = p <= 1;
+    if (nextBtn) nextBtn.disabled = p >= pages;
+    if (!j.data || !j.data.length) {
+      tbody.innerHTML = '<tr><td colspan="9" class="no-data">No SMS records</td></tr>';
+      return;
+    }
+    tbody.innerHTML = j.data.map((row) => {
+      const nm = escHtml(((row.firstname || '') + ' ' + (row.lastname || '')).trim() || '—');
+      const rawMsg = row.message_body || '';
+      const msg = escHtml(rawMsg.slice(0, 120)) + (rawMsg.length > 120 ? '…' : '');
+      const sent = row.created_at ? new Date(row.created_at).toLocaleString('en-GB') : '—';
+      const st = escHtml(row.status || '—');
+      return `<tr>
+        <td class="emp-id" style="font-size:11px">${escHtml(sent)}</td>
+        <td><span class="emp-id">${escHtml(row.work_date)}</span></td>
+        <td><span class="emp-id">${escHtml(row.employee_id)}</span><div class="emp-id" style="font-size:10px;margin-top:2px">${nm}</div></td>
+        <td><span class="time-val">${escHtml(row.phone || '—')}</span></td>
+        <td><span class="time-val">${row.daily_rate_snapshot != null ? Number(row.daily_rate_snapshot).toLocaleString() : '—'}</span></td>
+        <td class="emp-id" style="font-size:10px;max-width:220px;word-break:break-word">${msg}</td>
+        <td class="emp-id" style="font-size:10px">${escHtml(row.textify_message_id || '—')}</td>
+        <td><span class="emp-id" style="font-size:11px">${st}</span></td>
+        <td class="emp-id" style="font-size:10px;color:var(--danger);max-width:140px;word-break:break-word">${escHtml(row.provider_error || '')}</td>
+      </tr>`;
+    }).join('');
+  } catch (e) {
+    tbody.innerHTML = '<tr><td colspan="9" class="no-data">Connection error</td></tr>';
+  }
+}
 
 // ── EMPLOYEES TAB ─────────────────────────────────────────
 let allShifts = [];
@@ -1348,19 +1899,30 @@ async function loadEmployeeTab() {
   }
 
   const tbody = document.getElementById('emp-tab-body');
-  let j;
+  const normId = (id) => String(id == null ? '' : id).trim();
+
+  let list = [];
   try {
     const r = await fetch(BASE+'/api/employees/from-attlog');
-    j = await r.json();
+    const j = await r.json();
+    if (j.success && j.data && j.data.length) list = j.data;
   } catch (e) {
     tbody.innerHTML='<tr><td colspan="8" class="no-data">CONNECTION ERROR</td></tr>';
     return;
   }
-  if (!j.success || !j.data.length) {
-    tbody.innerHTML='<tr><td colspan="8" class="no-data">NO EMPLOYEES IN ATTLOG YET — SWIPES WILL APPEAR HERE</td></tr>';
+
+  if (!list.length) {
+    tbody.innerHTML='<tr><td colspan="8" class="no-data">NO ONE IN ATTLOG YET — SWIPES FROM THE DEVICE WILL APPEAR HERE</td></tr>';
     return;
   }
-  tbody.innerHTML = j.data.map(e => {
+
+  list.sort((a, b) => {
+    const na = (`${a.firstname || ''} ${a.lastname || ''}`).trim() || normId(a.id);
+    const nb = (`${b.firstname || ''} ${b.lastname || ''}`).trim() || normId(b.id);
+    return na.localeCompare(nb, undefined, { sensitivity: 'base' });
+  });
+
+  tbody.innerHTML = list.map(e => {
     const shift = allShifts.find(s => Number(s.id) === Number(e.shift_id));
     const displayName =
       (e.display_name && String(e.display_name).trim()) ||
@@ -1368,11 +1930,13 @@ async function loadEmployeeTab() {
       (e.attlog_name && String(e.attlog_name).trim()) ||
       '—';
     const lastSwipe = e.last_swipe_at ? fmtTime(e.last_swipe_at) : '—';
-    const swipeMeta = e.swipe_count != null ? `<span class="emp-id" style="display:block;margin-top:4px">${e.swipe_count} swipes in attlog</span>` : '';
+    const swipeMeta = e.swipe_count != null
+      ? `<span class="emp-id" style="display:block;margin-top:4px">${e.swipe_count} swipes in attlog</span>`
+      : '';
     const actions = adminToken
       ? `<button type="button" class="btn btn-secondary btn-sm" onclick='editEmployee(${JSON.stringify(e.id)})'>Edit</button>
          <button type="button" class="btn btn-sm" style="background:transparent;border:1px solid var(--danger);color:var(--danger);margin-left:6px" onclick='deleteEmployee(${JSON.stringify(e.id)}, ${JSON.stringify(displayName)})'>Delete</button>`
-      : '<span class="emp-id">Unlock Admin to edit</span>';
+      : '<span class="emp-id">Unlock Administration to edit</span>';
     return `<tr>
       <td><span class="emp-id">${e.id}</span>${swipeMeta}</td>
       <td class="emp-name">${displayName}</td>
@@ -1394,7 +1958,7 @@ async function loadEmployeeTab() {
 
 function openEmpModal(prefillId) {
   if (!adminToken) {
-    toast('Unlock Admin tab first to add or edit employees', false);
+    toast('Unlock Administration first to add or edit employees', false);
     return;
   }
   // Reset form
@@ -1637,6 +2201,7 @@ function applyTheme() {
   document.getElementById('summary-date').addEventListener('change', loadSummary);
   applyTheme();
   await restoreAdminSession();
+  updateSmsPanelGate();
   loadStats(); loadLive();
   setInterval(loadLive, 10000);
   setInterval(loadStats, 15000);

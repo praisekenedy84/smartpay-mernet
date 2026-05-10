@@ -11,10 +11,10 @@ Attendance monitoring dashboard for HIKCentral → PostgreSQL pipeline.
 
 ```bash
 # 1. Upload this folder to your VPS
-scp -r smartpay-dashboard root@109.205.176.113:/opt/
+scp -r smartpay-dashboard root@<your-vps-host>:/opt/
 
 # 2. SSH into VPS
-ssh root@109.205.176.113
+ssh root@<your-vps-host>
 
 # 3. Install Node.js if not present
 curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
