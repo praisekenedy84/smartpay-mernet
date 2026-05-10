@@ -730,35 +730,85 @@ app.get('/api/admin/employees/:id', adminAuth, async (req, res) => {
   }
 });
 
-// Delete employee (employeex only; attlog is HIKCentral — cannot delete swipes here)
+// Delete employee.
+//   default: removes from HR register (employeex) only. If the ID exists only in
+//            attlog, the call is a no-op and returns only_in_attlog=true so the
+//            UI can prompt for a purge.
+//   ?purge=1: also purges attlog (HIKCentral feed) + attendance_log + payment_queue + sms_log.
 app.delete('/api/admin/employees/:id', adminAuth, async (req, res) => {
   const rawId = req.params.id;
+  const purge = req.query.purge === '1' || req.query.purge === 'true';
+  const client = await pool.connect();
   try {
-    const del = await pool.query('DELETE FROM employeex WHERE TRIM(id) = TRIM($1)', [rawId]);
-    if (del.rowCount > 0) {
+    await client.query('BEGIN');
+
+    const counts = { employeex: 0, attlog: 0, attendance_log: 0, payment_queue: 0, sms_log: 0 };
+
+    if (purge) {
+      const { idCol } = await getAttlogSchema();
+      if (idCol) {
+        const r = await client.query(
+          `DELETE FROM attlog WHERE TRIM(${idCol}::text) = TRIM($1::text)`,
+          [rawId]
+        );
+        counts.attlog = r.rowCount || 0;
+      }
+      const al = await client.query(
+        'DELETE FROM attendance_log WHERE TRIM(employee_id::text) = TRIM($1::text)',
+        [rawId]
+      );
+      counts.attendance_log = al.rowCount || 0;
+
+      const pq = await client.query(
+        'DELETE FROM payment_queue WHERE TRIM(employee_id::text) = TRIM($1::text)',
+        [rawId]
+      );
+      counts.payment_queue = pq.rowCount || 0;
+
+      const sl = await client.query(
+        'DELETE FROM sms_log WHERE TRIM(employee_id::text) = TRIM($1::text)',
+        [rawId]
+      );
+      counts.sms_log = sl.rowCount || 0;
+    }
+
+    const del = await client.query('DELETE FROM employeex WHERE TRIM(id) = TRIM($1)', [rawId]);
+    counts.employeex = del.rowCount || 0;
+
+    await client.query('COMMIT');
+
+    if (purge) {
+      const anyRemoved =
+        counts.employeex + counts.attlog + counts.attendance_log + counts.payment_queue + counts.sms_log > 0;
+      return res.json({ success: true, purged: true, noop: !anyRemoved, counts });
+    }
+
+    if (counts.employeex > 0) {
       return res.json({ success: true });
     }
 
     const { idCol } = await getAttlogSchema();
-    if (!idCol) {
-      return res.json({ success: true, noop: true });
-    }
-    const still = await pool.query(
-      `SELECT 1 FROM attlog a WHERE TRIM(a.${idCol}::text) = TRIM($1) LIMIT 1`,
-      [rawId]
-    );
-    if (still.rows.length) {
-      return res.json({
-        success: true,
-        only_in_attlog: true,
-        message:
-          'This ID is only in attlog (not in the HR register). Use Edit → Save to add them to the register, or remove their device events in HIKCentral.',
-      });
+    if (idCol) {
+      const still = await pool.query(
+        `SELECT 1 FROM attlog a WHERE TRIM(a.${idCol}::text) = TRIM($1::text) LIMIT 1`,
+        [rawId]
+      );
+      if (still.rows.length) {
+        return res.json({
+          success: true,
+          only_in_attlog: true,
+          message:
+            'This ID is only in attlog (HIKCentral device feed). Confirm a purge to also remove their device swipes, attendance log, payment queue, and SMS history.',
+        });
+      }
     }
 
     return res.json({ success: true, noop: true });
   } catch (err) {
+    try { await client.query('ROLLBACK'); } catch (e) {}
     res.status(500).json({ success: false, error: err.message });
+  } finally {
+    client.release();
   }
 });
 

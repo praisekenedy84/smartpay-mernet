@@ -690,6 +690,35 @@
   .theme-toggle:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
   body.light .theme-toggle { background:#fff; }
 
+  .lang-switch {
+    display:inline-flex;
+    align-items:center;
+    border:1px solid var(--border2);
+    border-radius:var(--radius-sm);
+    overflow:hidden;
+    background:var(--surface);
+  }
+  .lang-switch .lang-btn {
+    font-family:var(--mono);
+    font-size:11px;
+    font-weight:600;
+    letter-spacing:0.04em;
+    padding:8px 10px;
+    min-height:36px;
+    border:none;
+    background:transparent;
+    color:var(--muted);
+    cursor:pointer;
+    transition:color .15s, background .15s;
+  }
+  .lang-switch .lang-btn:hover { color:var(--text); background:rgba(255,255,255,0.06); }
+  body.light .lang-switch .lang-btn:hover { background:rgba(15,23,42,0.06); }
+  .lang-switch .lang-btn.active {
+    color:var(--accent2);
+    background:var(--accent-dim);
+  }
+  .lang-switch .lang-btn:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+
   /* ── EMPLOYEE TAB ── */
   .emp-search-wrap { position:relative; }
   .emp-dropdown {
@@ -805,39 +834,43 @@
 <body>
 
 <div class="app-shell">
-  <aside class="app-sidebar" aria-label="Application navigation">
+  <aside class="app-sidebar" id="sidebar-aside" aria-label="Application navigation">
     <div class="sidebar-brand">
       <div class="logo">
         <div class="logo-mark">Smart<span>Pay</span></div>
-        <div class="logo-sub">Attendance</div>
+        <div class="logo-sub" data-i18n="brand_subtitle">Attendance</div>
       </div>
     </div>
     <nav class="sidebar-nav">
-      <div class="tab active" onclick="showTab('live')"       id="tab-live">Live feed</div>
-      <div class="tab"        onclick="showTab('compliance')" id="tab-compliance">Compliance</div>
-      <div class="tab"        onclick="showTab('summary')"    id="tab-summary">Daily summary</div>
-      <div class="tab"        onclick="showTab('employees')"  id="tab-employees">Employees</div>
-      <div class="tab"        onclick="showTab('reports')"    id="tab-reports">Reports</div>
-      <div class="tab"        onclick="showTab('sms')"       id="tab-sms">SMS</div>
-      <div class="tab"        onclick="showTab('admin')"      id="tab-admin">Administration</div>
+      <div class="tab active" onclick="showTab('live')"       id="tab-live" data-i18n="tab_live">Live feed</div>
+      <div class="tab"        onclick="showTab('compliance')" id="tab-compliance" data-i18n="tab_compliance">Compliance</div>
+      <div class="tab"        onclick="showTab('summary')"    id="tab-summary" data-i18n="tab_summary">Daily summary</div>
+      <div class="tab"        onclick="showTab('employees')"  id="tab-employees" data-i18n="tab_employees">Employees</div>
+      <div class="tab"        onclick="showTab('reports')"    id="tab-reports" data-i18n="tab_reports">Reports</div>
+      <div class="tab"        onclick="showTab('sms')"       id="tab-sms" data-i18n="tab_sms">SMS</div>
+      <div class="tab"        onclick="showTab('admin')"      id="tab-admin" data-i18n="tab_admin">Administration</div>
     </nav>
   </aside>
 
   <div class="app-main">
     <header class="app-topbar">
       <div class="header-right">
-        <div class="live-badge"><div class="live-dot"></div>Live</div>
+        <div class="lang-switch" role="group" data-i18n-aria-label="lang_group">
+          <button type="button" class="lang-btn active" id="lang-en" onclick="setLocale('en')" data-i18n-title="lang_en_title" title="English">EN</button>
+          <button type="button" class="lang-btn" id="lang-sw" onclick="setLocale('sw')" data-i18n-title="lang_sw_title" title="Kiswahili">SW</button>
+        </div>
+        <div class="live-badge"><div class="live-dot"></div><span data-i18n="live_badge">Live</span></div>
         <div class="clock" id="clock">--:--:--</div>
-        <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark mode">🌙</button>
+        <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" data-i18n-title="theme_toggle_title" title="Toggle light/dark mode">🌙</button>
       </div>
     </header>
 
     <div class="content-frame">
       <div class="content-head">
-        <nav class="breadcrumb" aria-label="Breadcrumb">
+        <nav class="breadcrumb" id="breadcrumb-nav" aria-label="Breadcrumb">
           <span>SmartPay</span>
           <span class="bc-sep" aria-hidden="true">/</span>
-          <span>Attendance</span>
+          <span data-i18n="brand_subtitle">Attendance</span>
           <span class="bc-sep" aria-hidden="true">/</span>
           <span id="breadcrumb-current">Live feed</span>
         </nav>
@@ -849,19 +882,19 @@
   <!-- LIVE FEED -->
   <div class="panel active" id="panel-live">
     <div class="stats-grid">
-      <div class="stat-card green"><div class="stat-label">Checked In Today</div><div class="stat-value" id="stat-in">—</div></div>
-      <div class="stat-card blue"><div class="stat-label">Checked Out</div><div class="stat-value" id="stat-out">—</div></div>
-      <div class="stat-card orange"><div class="stat-label">Payments Queued</div><div class="stat-value" id="stat-pay">—</div></div>
-      <div class="stat-card"><div class="stat-label">Total Employees</div><div class="stat-value" id="stat-total">—</div></div>
+      <div class="stat-card green"><div class="stat-label" data-i18n="stat_checked_in">Checked In Today</div><div class="stat-value" id="stat-in">—</div></div>
+      <div class="stat-card blue"><div class="stat-label" data-i18n="stat_checked_out">Checked Out</div><div class="stat-value" id="stat-out">—</div></div>
+      <div class="stat-card orange"><div class="stat-label" data-i18n="stat_payments_queued">Payments Queued</div><div class="stat-value" id="stat-pay">—</div></div>
+      <div class="stat-card"><div class="stat-label" data-i18n="stat_total_employees">Total Employees</div><div class="stat-value" id="stat-total">—</div></div>
     </div>
     <div class="table-wrap">
       <div class="table-header">
-        <div class="table-title">Access Events — Today</div>
-        <div class="table-meta" id="live-updated">Refreshing every 10s</div>
+        <div class="table-title" data-i18n="live_table_title">Access Events — Today</div>
+        <div class="table-meta" id="live-updated" data-i18n="live_refresh_hint">Refreshing every 10s</div>
       </div>
       <table>
-        <thead><tr><th>Employee</th><th>Event</th><th>Time</th><th>Shift</th><th>Payment</th></tr></thead>
-        <tbody id="live-body"><tr><td colspan="5" class="no-data">LOADING...</td></tr></tbody>
+        <thead><tr><th data-i18n="col_employee">Employee</th><th data-i18n="col_event">Event</th><th data-i18n="col_time">Time</th><th data-i18n="col_shift">Shift</th><th data-i18n="col_payment">Payment</th></tr></thead>
+        <tbody id="live-body"><tr><td colspan="5" class="no-data" data-i18n="loading">LOADING...</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -869,18 +902,18 @@
   <!-- COMPLIANCE -->
   <div class="panel" id="panel-compliance">
     <div class="filter-row">
-      <span class="filter-label">Date</span>
+      <span class="filter-label" data-i18n="label_date">Date</span>
       <input type="date" id="compliance-date">
-      <button type="button" class="refresh-btn" onclick="loadCompliance()">↺ Refresh</button>
+      <button type="button" class="refresh-btn" onclick="loadCompliance()" data-i18n="btn_refresh">↺ Refresh</button>
     </div>
     <div class="legend">
-      <span class="filter-label" style="margin-right:4px">Key:</span>
-      <div class="legend-item"><span class="badge badge-ontime">On Time</span>&nbsp;within window</div>
-      <div class="legend-item"><span class="badge badge-late">Late</span>&nbsp;after check-in closes</div>
-      <div class="legend-item"><span class="badge badge-earlyout">Early Out</span>&nbsp;before checkout opens</div>
-      <div class="legend-item"><span class="badge badge-notout">Not Out</span>&nbsp;only one scan</div>
-      <div class="legend-item"><span class="badge badge-leftlate">Left Late</span>&nbsp;after checkout window</div>
-      <div class="legend-item"><span class="badge badge-absent">Absent</span>&nbsp;no events</div>
+      <span class="filter-label" style="margin-right:4px" data-i18n="legend_key">Key:</span>
+      <div class="legend-item" data-i18n-html="legend_row_ontime"></div>
+      <div class="legend-item" data-i18n-html="legend_row_late"></div>
+      <div class="legend-item" data-i18n-html="legend_row_earlyout"></div>
+      <div class="legend-item" data-i18n-html="legend_row_notout"></div>
+      <div class="legend-item" data-i18n-html="legend_row_leftlate"></div>
+      <div class="legend-item" data-i18n-html="legend_row_absent"></div>
     </div>
     <div class="table-wrap">
       <div class="table-header">
@@ -889,9 +922,9 @@
       </div>
       <table>
         <thead>
-          <tr><th>Employee</th><th>First Scan</th><th>In Status</th><th>Last Scan</th><th>Out Status</th><th>Scans</th><th>Shift Window</th></tr>
+          <tr><th data-i18n="col_employee">Employee</th><th data-i18n="col_first_scan">First Scan</th><th data-i18n="col_in_status">In Status</th><th data-i18n="col_last_scan">Last Scan</th><th data-i18n="col_out_status">Out Status</th><th data-i18n="col_scans">Scans</th><th data-i18n="col_shift_window">Shift Window</th></tr>
         </thead>
-        <tbody id="compliance-body"><tr><td colspan="7" class="no-data">LOADING…</td></tr></tbody>
+        <tbody id="compliance-body"><tr><td colspan="7" class="no-data" data-i18n="loading_ellipsis">LOADING…</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -899,17 +932,17 @@
   <!-- DAILY SUMMARY -->
   <div class="panel" id="panel-summary">
     <div class="filter-row">
-      <span class="filter-label">Date</span>
+      <span class="filter-label" data-i18n="label_date">Date</span>
       <input type="date" id="summary-date">
-      <button type="button" class="refresh-btn" onclick="loadSummary()">↺ Refresh</button>
+      <button type="button" class="refresh-btn" onclick="loadSummary()" data-i18n="btn_refresh">↺ Refresh</button>
     </div>
-    <p class="emp-id" style="margin:-8px 0 14px;line-height:1.55;max-width:52rem">
+    <p class="emp-id" style="margin:-8px 0 14px;line-height:1.55;max-width:52rem" data-i18n="summary_intro">
       Totals below use the same rules as Compliance: on-time first scan (check-in window) and on-time last scan (checkout window), with at least two scans. Amounts sum each eligible employee’s current daily rate from Administration.
     </p>
     <div class="stats-grid summary-stats">
-      <div class="stat-card"><div class="stat-label">With attendance</div><div class="stat-value" id="summary-stat-scans">—</div></div>
-      <div class="stat-card green"><div class="stat-label">Eligible for payment</div><div class="stat-value" id="summary-stat-eligible">—</div></div>
-      <div class="stat-card orange"><div class="stat-label">Total to pay (TZS)</div><div class="stat-value" id="summary-stat-payout" style="font-size:clamp(22px,4vw,32px)">—</div></div>
+      <div class="stat-card"><div class="stat-label" data-i18n="summary_stat_scans">With attendance</div><div class="stat-value" id="summary-stat-scans">—</div></div>
+      <div class="stat-card green"><div class="stat-label" data-i18n="summary_stat_eligible">Eligible for payment</div><div class="stat-value" id="summary-stat-eligible">—</div></div>
+      <div class="stat-card orange"><div class="stat-label" data-i18n="summary_stat_payout">Total to pay (TZS)</div><div class="stat-value" id="summary-stat-payout" style="font-size:clamp(22px,4vw,32px)">—</div></div>
     </div>
     <div class="table-wrap">
       <div class="table-header">
@@ -917,8 +950,8 @@
         <div class="table-meta" id="summary-count"></div>
       </div>
       <table>
-        <thead><tr><th>Employee</th><th>Phone</th><th>Check In</th><th>Check Out</th><th>Scans</th><th>Payment</th></tr></thead>
-        <tbody id="summary-body"><tr><td colspan="6" class="no-data">LOADING…</td></tr></tbody>
+        <thead><tr><th data-i18n="col_employee">Employee</th><th data-i18n="col_phone">Phone</th><th data-i18n="col_check_in">Check In</th><th data-i18n="col_check_out">Check Out</th><th data-i18n="col_scans">Scans</th><th data-i18n="col_payment">Payment</th></tr></thead>
+        <tbody id="summary-body"><tr><td colspan="6" class="no-data" data-i18n="loading_ellipsis">LOADING…</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -926,42 +959,29 @@
   <!-- SMS (logs + template — requires admin session) -->
   <div class="panel" id="panel-sms">
     <div id="sms-gate" class="table-wrap" style="padding:28px;max-width:520px;margin:0 auto">
-      <div class="section-title" style="margin-bottom:12px">SMS — admin only</div>
-      <p class="emp-id" style="line-height:1.6;margin-bottom:16px">
-        Eligibility SMS history and the message template are available after you sign in with the
-        <strong>same password</strong> as the Administration tab. You can also unlock Administration first, then return here.
-      </p>
+      <div class="section-title" style="margin-bottom:12px" data-i18n="sms_gate_title">SMS — admin only</div>
+      <p class="emp-id" style="line-height:1.6;margin-bottom:16px" data-i18n-html="sms_gate_body"></p>
       <div class="input-row" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-        <input type="password" id="sms-gate-pw" placeholder="Administrator password" style="flex:1;min-width:200px;padding:10px 12px;border:1px solid var(--border);background:var(--panel);color:var(--text);border-radius:var(--radius-sm)">
-        <button type="button" class="btn btn-primary" onclick="smsGateLogin()">Unlock SMS</button>
+        <input type="password" id="sms-gate-pw" data-i18n-placeholder="ph_admin_password" placeholder="Administrator password" style="flex:1;min-width:200px;padding:10px 12px;border:1px solid var(--border);background:var(--panel);color:var(--text);border-radius:var(--radius-sm)">
+        <button type="button" class="btn btn-primary" onclick="smsGateLogin()" data-i18n="btn_unlock_sms">Unlock SMS</button>
       </div>
       <div id="sms-gate-error" style="color:var(--danger);font-family:var(--mono);font-size:11px;margin-top:12px"></div>
     </div>
 
     <div id="sms-main" style="display:none">
       <div class="panel-toolbar">
-        <h2>SMS log &amp; template</h2>
+        <h2 data-i18n="sms_main_heading">SMS log &amp; template</h2>
         <div class="panel-toolbar-actions">
-          <button type="button" class="refresh-btn" onclick="loadSmsSettings(); loadSmsLogs(smsLogsPage)">↺ Refresh all</button>
-          <button type="button" class="refresh-btn" onclick="adminLogout()" title="End administrator session (SMS + Administration)">Sign out</button>
+          <button type="button" class="refresh-btn" onclick="loadSmsSettings(); loadSmsLogs(smsLogsPage)" data-i18n="btn_refresh_all">↺ Refresh all</button>
+          <button type="button" class="refresh-btn" onclick="adminLogout()" data-i18n-title="btn_sign_out_title" title="End administrator session (SMS + Administration)" data-i18n="btn_sign_out">Sign out</button>
         </div>
       </div>
 
       <div class="table-wrap" style="padding:22px;margin-bottom:20px">
-        <div class="section-title" style="margin-bottom:10px">How to edit the message template</div>
-        <ol class="emp-id" style="line-height:1.65;margin:0 0 16px 18px;padding:0;max-width:56rem">
-          <li>Type your SMS text in the box below. Keep it short (one SMS is ~160 characters in many networks).</li>
-          <li>Use <strong>placeholders</strong> exactly as written — they are replaced when the message is sent:
-            <code>{name}</code> employee name,
-            <code>{amount}</code> daily rate number,
-            <code>{date}</code> work date,
-            <code>{currency}</code> usually TZS.
-          </li>
-          <li>Click <strong>Save template</strong>. New eligibility messages will use the saved text.</li>
-          <li>Leave the box empty and save to use the <strong>built-in default</strong> again (see hint under the box).</li>
-        </ol>
+        <div class="section-title" style="margin-bottom:10px" data-i18n="sms_how_title">How to edit the message template</div>
+        <ol class="emp-id" style="line-height:1.65;margin:0 0 16px 18px;padding:0;max-width:56rem" data-i18n-html="sms_how_list"></ol>
         <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 16px;margin-bottom:16px;background:var(--surface)">
-          <div class="form-label" style="margin-bottom:8px">Examples (copy and change wording as you like)</div>
+          <div class="form-label" style="margin-bottom:8px" data-i18n="sms_examples_title">Examples (copy and change wording as you like)</div>
           <ul class="emp-id" style="margin:0;padding-left:18px;line-height:1.55;font-family:var(--mono);font-size:11px">
             <li>Hi {name}, shift completed on time. Payment eligible: {amount} {currency}. {date}.</li>
             <li>SmartPay: {name}, you are eligible for {amount} {currency} for {date}. Thank you.</li>
@@ -969,25 +989,22 @@
           </ul>
         </div>
         <div class="form-group">
-          <label class="form-label">Your template</label>
-          <textarea id="sms-template-input" rows="5" style="width:100%;font-family:var(--mono);font-size:12px" placeholder="Leave empty for default, or write your message with {name} {amount} {date} {currency}"></textarea>
+          <label class="form-label" data-i18n="sms_your_template">Your template</label>
+          <textarea id="sms-template-input" rows="5" style="width:100%;font-family:var(--mono);font-size:12px" data-i18n-placeholder="ph_sms_template" placeholder="Leave empty for default, or write your message with {name} {amount} {date} {currency}"></textarea>
         </div>
         <div id="sms-template-default-hint" class="emp-id" style="margin-bottom:12px;font-size:11px;line-height:1.5"></div>
-        <button type="button" class="btn btn-primary" onclick="saveSmsTemplate()">Save template</button>
+        <button type="button" class="btn btn-primary" onclick="saveSmsTemplate()" data-i18n="btn_save_template">Save template</button>
       </div>
 
       <div class="table-wrap" style="margin-bottom:20px">
-        <div class="section-title" style="padding:16px 16px 0">Status guide</div>
-        <p class="emp-id" style="padding:0 16px 12px;line-height:1.55;max-width:52rem">
-          <strong>sent</strong> — accepted by Textify. <strong>delivered</strong> / <strong>pending</strong> / <strong>sending</strong> — from Textify or your webhook.
-          <strong>failed</strong> — not sent or rejected; see the Error column. One row per employee per work day; failed rows can retry on the next poller run if the employee is still eligible.
-        </p>
+        <div class="section-title" style="padding:16px 16px 0" data-i18n="sms_status_guide_title">Status guide</div>
+        <p class="emp-id" style="padding:0 16px 12px;line-height:1.55;max-width:52rem" data-i18n-html="sms_status_guide_body"></p>
         <div class="table-header" style="flex-wrap:wrap;gap:10px;padding:12px 16px;border-top:1px solid var(--border)">
-          <div class="table-title">Sent messages</div>
+          <div class="table-title" data-i18n="sms_sent_messages">Sent messages</div>
           <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
             <input type="date" id="sms-log-date" style="padding:8px;border:1px solid var(--border);background:var(--panel);color:var(--text);border-radius:var(--radius-sm)">
-            <input type="text" id="sms-log-eid" placeholder="Employee ID" style="padding:8px;width:130px;border:1px solid var(--border);background:var(--panel);color:var(--text);border-radius:var(--radius-sm)">
-            <button type="button" class="refresh-btn" onclick="loadSmsLogs(1)">↺ Refresh</button>
+            <input type="text" id="sms-log-eid" data-i18n-placeholder="ph_employee_id" placeholder="Employee ID" style="padding:8px;width:130px;border:1px solid var(--border);background:var(--panel);color:var(--text);border-radius:var(--radius-sm)">
+            <button type="button" class="refresh-btn" onclick="loadSmsLogs(1)" data-i18n="btn_refresh">↺ Refresh</button>
           </div>
         </div>
         <div id="sms-log-meta" class="emp-id" style="padding:8px 16px"></div>
@@ -995,15 +1012,15 @@
           <table style="min-width:920px">
             <thead>
               <tr>
-                <th>Sent</th><th>Work date</th><th>Employee</th><th>Phone</th><th>Amount</th><th>Message</th><th>Textify ID</th><th>Status</th><th>Error</th>
+                <th data-i18n="col_sent">Sent</th><th data-i18n="col_work_date">Work date</th><th data-i18n="col_employee">Employee</th><th data-i18n="col_phone">Phone</th><th data-i18n="col_amount">Amount</th><th data-i18n="col_message">Message</th><th data-i18n="col_textify_id">Textify ID</th><th data-i18n="col_status">Status</th><th data-i18n="col_error">Error</th>
               </tr>
             </thead>
-            <tbody id="sms-log-body"><tr><td colspan="9" class="no-data">Loading…</td></tr></tbody>
+            <tbody id="sms-log-body"><tr><td colspan="9" class="no-data" data-i18n="loading_soft">Loading…</td></tr></tbody>
           </table>
         </div>
         <div style="display:flex;gap:12px;align-items:center;padding:12px 16px">
-          <button type="button" class="btn btn-secondary btn-sm" id="sms-log-prev" onclick="loadSmsLogs(smsLogsPage - 1)">Previous</button>
-          <button type="button" class="btn btn-secondary btn-sm" id="sms-log-next" onclick="loadSmsLogs(smsLogsPage + 1)">Next</button>
+          <button type="button" class="btn btn-secondary btn-sm" id="sms-log-prev" onclick="loadSmsLogs(smsLogsPage - 1)" data-i18n="btn_previous">Previous</button>
+          <button type="button" class="btn btn-secondary btn-sm" id="sms-log-next" onclick="loadSmsLogs(smsLogsPage + 1)" data-i18n="btn_next">Next</button>
         </div>
       </div>
     </div>
@@ -1012,22 +1029,20 @@
   <!-- EMPLOYEES -->
   <div class="panel" id="panel-employees">
     <div class="panel-toolbar">
-      <h2>Employee Register</h2>
+      <h2 data-i18n="emp_register_title">Employee Register</h2>
       <div class="panel-toolbar-actions">
-        <button type="button" class="refresh-btn" onclick="loadEmployeeTab()">↺ Refresh</button>
-        <button type="button" class="btn btn-primary" onclick="openEmpModal()">+ Add Employee</button>
+        <button type="button" class="refresh-btn" onclick="loadEmployeeTab()" data-i18n="btn_refresh">↺ Refresh</button>
+        <button type="button" class="btn btn-primary" onclick="openEmpModal()" data-i18n="btn_add_employee">+ Add Employee</button>
       </div>
-      <p class="emp-id" style="width:100%;margin:10px 0 0;line-height:1.55;max-width:56rem">
-        Lists everyone who has ever swiped: distinct IDs from <strong>attlog</strong> (device feed) and <strong>attendance_log</strong> (processed scans), with no date limit. HR fields come from the register when present.
-      </p>
+      <p class="emp-id" style="width:100%;margin:10px 0 0;line-height:1.55;max-width:56rem" data-i18n-html="emp_tab_intro"></p>
     </div>
     <div class="table-wrap">
       <table>
         <thead>
-          <tr><th>ID</th><th>Name</th><th>Phone</th><th>Daily Rate</th><th>Provider</th><th>Shift</th><th>Last swipe</th><th>Actions</th></tr>
+          <tr><th data-i18n="col_id">ID</th><th data-i18n="col_name">Name</th><th data-i18n="col_phone">Phone</th><th data-i18n="col_daily_rate">Daily Rate</th><th data-i18n="col_provider">Provider</th><th data-i18n="col_shift">Shift</th><th data-i18n="col_last_swipe">Last swipe</th><th data-i18n="col_actions">Actions</th></tr>
         </thead>
         <tbody id="emp-tab-body">
-          <tr><td colspan="8" class="no-data">LOADING...</td></tr>
+          <tr><td colspan="8" class="no-data" data-i18n="loading">LOADING...</td></tr>
         </tbody>
       </table>
     </div>
@@ -1038,27 +1053,27 @@
 
     <!-- Daily Report -->
     <div class="report-card">
-      <div class="report-title">Daily Attendance Report</div>
-      <div class="report-desc">Check-in / check-out times and compliance for a single day</div>
+      <div class="report-title" data-i18n="report_daily_title">Daily Attendance Report</div>
+      <div class="report-desc" data-i18n="report_daily_desc">Check-in / check-out times and compliance for a single day</div>
       <div class="filter-row">
-        <span class="filter-label">Date</span>
+        <span class="filter-label" data-i18n="label_date">Date</span>
         <input type="date" id="report-daily-date">
-        <button class="refresh-btn" onclick="previewDailyReport()">↺ Preview</button>
+        <button class="refresh-btn" onclick="previewDailyReport()" data-i18n="btn_preview">↺ Preview</button>
       </div>
       <div class="export-btns">
-        <button class="btn btn-excel" onclick="exportReport('daily','excel')">⬇ Export Excel</button>
-        <button class="btn btn-pdf"   onclick="exportReport('daily','pdf')">⬇ Export PDF</button>
+        <button class="btn btn-excel" onclick="exportReport('daily','excel')" data-i18n="btn_export_excel">⬇ Export Excel</button>
+        <button class="btn btn-pdf"   onclick="exportReport('daily','pdf')" data-i18n="btn_export_pdf">⬇ Export PDF</button>
       </div>
       <div id="daily-preview" class="report-preview" style="display:none;margin-top:16px">
         <div class="preview-row daily-grid">
-          <div class="preview-cell preview-header">Name</div>
-          <div class="preview-cell preview-header">ID</div>
-          <div class="preview-cell preview-header">Check In</div>
-          <div class="preview-cell preview-header">Check Out</div>
-          <div class="preview-cell preview-header">Scans</div>
-          <div class="preview-cell preview-header">In Status</div>
-          <div class="preview-cell preview-header">Out Status</div>
-          <div class="preview-cell preview-header">Min Late</div>
+          <div class="preview-cell preview-header" data-i18n="col_name">Name</div>
+          <div class="preview-cell preview-header" data-i18n="col_id">ID</div>
+          <div class="preview-cell preview-header" data-i18n="col_check_in">Check In</div>
+          <div class="preview-cell preview-header" data-i18n="col_check_out">Check Out</div>
+          <div class="preview-cell preview-header" data-i18n="col_scans">Scans</div>
+          <div class="preview-cell preview-header" data-i18n="col_in_status">In Status</div>
+          <div class="preview-cell preview-header" data-i18n="col_out_status">Out Status</div>
+          <div class="preview-cell preview-header" data-i18n="col_min_late">Min Late</div>
         </div>
         <div id="daily-preview-body"></div>
       </div>
@@ -1066,11 +1081,11 @@
 
     <!-- Monthly Report -->
     <div class="report-card">
-      <div class="report-title">Monthly Attendance Report</div>
-      <div class="report-desc">Full month view — attendance tendencies per employee</div>
+      <div class="report-title" data-i18n="report_monthly_title">Monthly Attendance Report</div>
+      <div class="report-desc" data-i18n="report_monthly_desc">Full month view — attendance tendencies per employee</div>
       <div class="filter-row">
-        <span class="filter-label">Month</span>
-        <select id="report-month" style="background:var(--surface);border:1px solid var(--border2);color:var(--text);padding:8px 12px;font-family:var(--mono);font-size:12px;outline:none">
+        <span class="filter-label" data-i18n="label_month">Month</span>
+        <select id="report-month" class="report-month-select" style="background:var(--surface);border:1px solid var(--border2);color:var(--text);padding:8px 12px;font-family:var(--mono);font-size:12px;outline:none">
           <option value="1">January</option><option value="2">February</option>
           <option value="3">March</option><option value="4">April</option>
           <option value="5">May</option><option value="6">June</option>
@@ -1078,23 +1093,23 @@
           <option value="9">September</option><option value="10">October</option>
           <option value="11">November</option><option value="12">December</option>
         </select>
-        <input type="number" id="report-year" style="width:90px" placeholder="2026">
-        <button class="refresh-btn" onclick="previewMonthlyReport()">↺ Preview</button>
+        <input type="number" id="report-year" style="width:90px" data-i18n-placeholder="ph_year" placeholder="2026">
+        <button class="refresh-btn" onclick="previewMonthlyReport()" data-i18n="btn_preview">↺ Preview</button>
       </div>
       <div class="export-btns">
-        <button class="btn btn-excel" onclick="exportReport('monthly','excel')">⬇ Export Excel</button>
-        <button class="btn btn-pdf"   onclick="exportReport('monthly','pdf')">⬇ Export PDF</button>
+        <button class="btn btn-excel" onclick="exportReport('monthly','excel')" data-i18n="btn_export_excel">⬇ Export Excel</button>
+        <button class="btn btn-pdf"   onclick="exportReport('monthly','pdf')" data-i18n="btn_export_pdf">⬇ Export PDF</button>
       </div>
       <div id="monthly-preview" class="report-preview" style="display:none;margin-top:16px">
         <div class="preview-row monthly-grid">
-          <div class="preview-cell preview-header">Date</div>
-          <div class="preview-cell preview-header">Name</div>
-          <div class="preview-cell preview-header">ID</div>
-          <div class="preview-cell preview-header">Check In</div>
-          <div class="preview-cell preview-header">Check Out</div>
-          <div class="preview-cell preview-header">Scans</div>
-          <div class="preview-cell preview-header">In Status</div>
-          <div class="preview-cell preview-header">Out Status</div>
+          <div class="preview-cell preview-header" data-i18n="col_date">Date</div>
+          <div class="preview-cell preview-header" data-i18n="col_name">Name</div>
+          <div class="preview-cell preview-header" data-i18n="col_id">ID</div>
+          <div class="preview-cell preview-header" data-i18n="col_check_in">Check In</div>
+          <div class="preview-cell preview-header" data-i18n="col_check_out">Check Out</div>
+          <div class="preview-cell preview-header" data-i18n="col_scans">Scans</div>
+          <div class="preview-cell preview-header" data-i18n="col_in_status">In Status</div>
+          <div class="preview-cell preview-header" data-i18n="col_out_status">Out Status</div>
         </div>
         <div id="monthly-preview-body"></div>
       </div>
@@ -1105,14 +1120,14 @@
   <!-- EMPLOYEE MODAL -->
   <div class="modal-overlay" id="emp-modal-overlay">
     <div class="modal">
-      <button class="modal-close" onclick="closeEmpModal()">✕</button>
+      <button class="modal-close" onclick="closeEmpModal()" aria-label="Close">✕</button>
       <div class="modal-title" id="emp-modal-title">Add Employee</div>
 
       <!-- ID field with search dropdown -->
       <div class="form-group">
-        <label class="form-label">Employee ID <span style="color:var(--muted);font-size:9px">(type to search existing)</span></label>
+        <label class="form-label"><span data-i18n="label_emp_id">Employee ID</span> <span style="color:var(--muted);font-size:9px" data-i18n="label_emp_id_hint">(type to search existing)</span></label>
         <div class="emp-search-wrap">
-          <input type="text" id="modal-emp-id" style="width:100%" placeholder="Type ID or search name..."
+          <input type="text" id="modal-emp-id" style="width:100%" data-i18n-placeholder="ph_search_id" placeholder="Type ID or search name..."
             oninput="empIdSearch(this.value)" autocomplete="off">
           <div class="emp-dropdown" id="emp-id-dropdown"></div>
         </div>
@@ -1120,37 +1135,37 @@
 
       <div class="form-grid-2">
         <div class="form-group">
-          <label class="form-label">First Name</label>
+          <label class="form-label" data-i18n="label_first_name">First Name</label>
           <input type="text" id="modal-emp-first" style="width:100%">
         </div>
         <div class="form-group">
-          <label class="form-label">Last Name</label>
+          <label class="form-label" data-i18n="label_last_name">Last Name</label>
           <input type="text" id="modal-emp-last" style="width:100%">
         </div>
       </div>
       <div class="form-group">
-        <label class="form-label">Phone Number</label>
+        <label class="form-label" data-i18n="label_phone">Phone Number</label>
         <input type="text" id="modal-emp-phone" style="width:100%" placeholder="0712345678">
       </div>
       <div class="form-grid-2">
         <div class="form-group">
-          <label class="form-label">Daily Rate (TZS)</label>
-          <input type="number" id="modal-emp-rate" style="width:100%" placeholder="15000">
+          <label class="form-label" data-i18n="label_daily_rate">Daily Rate (TZS)</label>
+          <input type="number" id="modal-emp-rate" style="width:100%" data-i18n-placeholder="ph_rate" placeholder="15000">
         </div>
         <div class="form-group">
-          <label class="form-label">Provider</label>
-          <input type="text" id="modal-emp-provider" style="width:100%" placeholder="vodacom">
+          <label class="form-label" data-i18n="col_provider">Provider</label>
+          <input type="text" id="modal-emp-provider" style="width:100%" data-i18n-placeholder="ph_provider" placeholder="vodacom">
         </div>
       </div>
       <div class="form-group">
-        <label class="form-label">Shift override <span style="color:var(--muted);font-weight:400;font-size:10px">(optional — empty = company default)</span></label>
+        <label class="form-label"><span data-i18n="label_shift_override">Shift override</span> <span style="color:var(--muted);font-weight:400;font-size:10px" data-i18n="label_shift_override_hint">(optional — empty = company default)</span></label>
         <select id="modal-emp-shift" style="width:100%;background:var(--surface);border:1px solid var(--border2);color:var(--text);padding:9px 12px;font-family:var(--mono);font-size:12px;outline:none">
           <option value="">— Company default —</option>
         </select>
       </div>
       <div style="display:flex;gap:10px;margin-top:6px">
-        <button class="btn btn-primary" onclick="saveEmpModal()" style="flex:1;padding:12px">Save Employee</button>
-        <button class="btn btn-secondary" onclick="closeEmpModal()" style="padding:12px 20px">Cancel</button>
+        <button class="btn btn-primary" onclick="saveEmpModal()" style="flex:1;padding:12px" data-i18n="btn_save_employee">Save Employee</button>
+        <button class="btn btn-secondary" onclick="closeEmpModal()" style="padding:12px 20px" data-i18n="btn_cancel">Cancel</button>
       </div>
       <div id="modal-emp-error" style="color:var(--danger);font-family:var(--mono);font-size:11px;margin-top:10px;"></div>
     </div>
@@ -1159,7 +1174,7 @@
   <!-- Daily summary: scan list -->
   <div class="modal-overlay" id="scans-modal-overlay">
     <div class="modal modal-wide">
-      <button type="button" class="modal-close" onclick="closeScansModal()">✕</button>
+      <button type="button" class="modal-close" onclick="closeScansModal()" aria-label="Close">✕</button>
       <div class="modal-title" id="scans-modal-title">Scans</div>
       <div class="scans-modal-meta" id="scans-modal-meta"></div>
       <div id="scans-modal-body" class="scans-list"></div>
@@ -1170,10 +1185,10 @@
   <div class="panel" id="panel-admin">
     <div id="admin-lock">
       <div class="admin-lock">
-        <div class="admin-lock-title">Administrator access required</div>
+        <div class="admin-lock-title" data-i18n="admin_lock_title">Administrator access required</div>
         <div class="input-row">
-          <input type="password" id="admin-pw-input" placeholder="Enter admin password" style="width:260px">
-          <button class="btn btn-primary" onclick="adminLogin()">Unlock</button>
+          <input type="password" id="admin-pw-input" data-i18n-placeholder="ph_enter_admin" placeholder="Enter admin password" style="width:260px">
+          <button class="btn btn-primary" onclick="adminLogin()" data-i18n="btn_unlock">Unlock</button>
         </div>
         <div id="admin-pw-error" style="color:var(--danger);font-family:var(--mono);font-size:11px;margin-top:12px;"></div>
       </div>
@@ -1184,62 +1199,60 @@
       <!-- Shift Config -->
       <div class="table-wrap" style="padding:22px;margin-bottom:20px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:10px">
-          <div class="section-title" style="margin:0;padding:0;border:none">Shift Configuration</div>
+          <div class="section-title" style="margin:0;padding:0;border:none" data-i18n="admin_shift_config">Shift Configuration</div>
           <div style="display:flex;gap:10px;align-items:center">
-            <button type="button" class="refresh-btn" onclick="loadShiftConfig()">↺ Refresh</button>
-            <button type="button" class="refresh-btn" onclick="adminLogout()" title="Clear admin session on this tab">Sign out</button>
+            <button type="button" class="refresh-btn" onclick="loadShiftConfig()" data-i18n="btn_refresh">↺ Refresh</button>
+            <button type="button" class="refresh-btn" onclick="adminLogout()" data-i18n-title="btn_sign_out_admin_title" title="Clear admin session on this tab" data-i18n="btn_sign_out">Sign out</button>
           </div>
         </div>
-        <div id="shift-config-area">Loading…</div>
+        <div id="shift-config-area" data-i18n="loading_soft">Loading…</div>
       </div>
 
       <!-- Add Shift + Employee -->
       <div class="admin-grid" style="margin-bottom:20px">
         <div class="table-wrap" style="padding:22px">
-          <div class="section-title">Add New Shift</div>
+          <div class="section-title" data-i18n="admin_add_shift">Add New Shift</div>
           <div class="form-group">
-            <label class="form-label">Shift Name</label>
-            <input type="text" id="new-shift-name" style="width:100%" placeholder="Night Shift">
+            <label class="form-label" data-i18n="label_shift_name">Shift Name</label>
+            <input type="text" id="new-shift-name" style="width:100%" data-i18n-placeholder="ph_night_shift" placeholder="Night Shift">
           </div>
           <div class="form-grid-2">
-            <div class="form-group"><label class="form-label">Check-in Opens</label><input type="time" id="new-ci-start" value="06:00" style="width:100%"></div>
-            <div class="form-group"><label class="form-label">Check-in Closes</label><input type="time" id="new-ci-end" value="09:00" style="width:100%"></div>
-            <div class="form-group"><label class="form-label">Check-out Opens</label><input type="time" id="new-co-start" value="15:00" style="width:100%"></div>
-            <div class="form-group"><label class="form-label">Check-out Closes</label><input type="time" id="new-co-end" value="19:00" style="width:100%"></div>
+            <div class="form-group"><label class="form-label" data-i18n="label_ci_opens">Check-in Opens</label><input type="time" id="new-ci-start" value="06:00" style="width:100%"></div>
+            <div class="form-group"><label class="form-label" data-i18n="label_ci_closes">Check-in Closes</label><input type="time" id="new-ci-end" value="09:00" style="width:100%"></div>
+            <div class="form-group"><label class="form-label" data-i18n="label_co_opens">Check-out Opens</label><input type="time" id="new-co-start" value="15:00" style="width:100%"></div>
+            <div class="form-group"><label class="form-label" data-i18n="label_co_closes">Check-out Closes</label><input type="time" id="new-co-end" value="19:00" style="width:100%"></div>
           </div>
-          <button class="btn btn-primary" onclick="addShift()" style="width:100%;padding:12px">Add Shift</button>
+          <button class="btn btn-primary" onclick="addShift()" style="width:100%;padding:12px" data-i18n="btn_add_shift">Add Shift</button>
         </div>
 
         <div class="table-wrap" style="padding:22px">
-          <div class="section-title">Add / Update Employee</div>
-          <div class="form-group"><label class="form-label">Employee ID</label><input type="text" id="emp-id" style="width:100%" placeholder="EMP001"></div>
+          <div class="section-title" data-i18n="admin_add_employee">Add / Update Employee</div>
+          <div class="form-group"><label class="form-label" data-i18n="label_emp_id">Employee ID</label><input type="text" id="emp-id" style="width:100%" data-i18n-placeholder="ph_emp001" placeholder="EMP001"></div>
           <div class="form-grid-2">
-            <div class="form-group"><label class="form-label">First Name</label><input type="text" id="emp-first" style="width:100%"></div>
-            <div class="form-group"><label class="form-label">Last Name</label><input type="text" id="emp-last" style="width:100%"></div>
+            <div class="form-group"><label class="form-label" data-i18n="label_first_name">First Name</label><input type="text" id="emp-first" style="width:100%"></div>
+            <div class="form-group"><label class="form-label" data-i18n="label_last_name">Last Name</label><input type="text" id="emp-last" style="width:100%"></div>
           </div>
-          <div class="form-group"><label class="form-label">Phone Number</label><input type="text" id="emp-phone" style="width:100%" placeholder="0712345678"></div>
+          <div class="form-group"><label class="form-label" data-i18n="label_phone">Phone Number</label><input type="text" id="emp-phone" style="width:100%" placeholder="0712345678"></div>
           <div class="form-grid-2">
-            <div class="form-group"><label class="form-label">Daily Rate (TZS)</label><input type="number" id="emp-rate" style="width:100%" placeholder="15000"></div>
-            <div class="form-group"><label class="form-label">Provider</label><input type="text" id="emp-provider" style="width:100%" placeholder="vodacom"></div>
+            <div class="form-group"><label class="form-label" data-i18n="label_daily_rate">Daily Rate (TZS)</label><input type="number" id="emp-rate" style="width:100%" data-i18n-placeholder="ph_rate" placeholder="15000"></div>
+            <div class="form-group"><label class="form-label" data-i18n="col_provider">Provider</label><input type="text" id="emp-provider" style="width:100%" data-i18n-placeholder="ph_provider" placeholder="vodacom"></div>
           </div>
-          <button class="btn btn-primary" onclick="saveEmployee()" style="width:100%;padding:12px">Save Employee</button>
+          <button class="btn btn-primary" onclick="saveEmployee()" style="width:100%;padding:12px" data-i18n="btn_save_employee">Save Employee</button>
         </div>
       </div>
 
       <!-- Employee List -->
       <div class="table-wrap">
         <div class="table-header">
-          <div class="table-title">Employee Register</div>
-          <button class="refresh-btn" onclick="loadEmployees()">↺ Refresh</button>
+          <div class="table-title" data-i18n="emp_register_title">Employee Register</div>
+          <button class="refresh-btn" onclick="loadEmployees()" data-i18n="btn_refresh">↺ Refresh</button>
         </div>
         <table>
-          <thead><tr><th>ID</th><th>Name</th><th>Phone</th><th>Daily Rate</th><th>Provider</th></tr></thead>
-          <tbody id="emp-body"><tr><td colspan="5" class="no-data">LOADING...</td></tr></tbody>
+          <thead><tr><th data-i18n="col_id">ID</th><th data-i18n="col_name">Name</th><th data-i18n="col_phone">Phone</th><th data-i18n="col_daily_rate">Daily Rate</th><th data-i18n="col_provider">Provider</th></tr></thead>
+          <tbody id="emp-body"><tr><td colspan="5" class="no-data" data-i18n="loading">LOADING...</td></tr></tbody>
         </table>
       </div>
-      <p class="emp-id" style="padding:12px 22px 22px;line-height:1.55;max-width:48rem;border-top:1px solid var(--border)">
-        <strong>SMS</strong> log and eligibility message template are on the <strong>SMS</strong> tab (same admin password).
-      </p>
+      <p class="emp-id" style="padding:12px 22px 22px;line-height:1.55;max-width:48rem;border-top:1px solid var(--border)" data-i18n-html="admin_sms_hint"></p>
     </div>
   </div>
 
@@ -1251,17 +1264,595 @@
 <div class="toast" id="toast"></div>
 
 <script>
+const LOCALE_KEY = 'smartpay-locale';
+let appLocale = 'en';
+
+const MESSAGES = {
+  en: {
+    doc_title: 'SmartPay · Attendance',
+    nav_aria: 'Application navigation',
+    breadcrumb_aria: 'Breadcrumb',
+    lang_en_title: 'English',
+    lang_sw_title: 'Kiswahili',
+    lang_group: 'Language',
+    brand_subtitle: 'Attendance',
+    tab_live: 'Live feed',
+    tab_compliance: 'Compliance',
+    tab_summary: 'Daily summary',
+    tab_employees: 'Employees',
+    tab_reports: 'Reports',
+    tab_sms: 'SMS',
+    tab_admin: 'Administration',
+    live_badge: 'Live',
+    theme_toggle_title: 'Toggle light/dark mode',
+    stat_checked_in: 'Checked In Today',
+    stat_checked_out: 'Checked Out',
+    stat_payments_queued: 'Payments Queued',
+    stat_total_employees: 'Total Employees',
+    live_table_title: 'Access Events — Today',
+    live_refresh_hint: 'Refreshing every 10s',
+    live_updated: 'Updated {time}',
+    col_employee: 'Employee',
+    col_event: 'Event',
+    col_time: 'Time',
+    col_shift: 'Shift',
+    col_payment: 'Payment',
+    loading: 'LOADING...',
+    loading_ellipsis: 'LOADING…',
+    loading_soft: 'Loading…',
+    label_date: 'Date',
+    btn_refresh: '↺ Refresh',
+    legend_key: 'Key:',
+    legend_row_ontime: '<span class="badge badge-ontime">On Time</span>&nbsp;within window',
+    legend_row_late: '<span class="badge badge-late">Late</span>&nbsp;after check-in closes',
+    legend_row_earlyout: '<span class="badge badge-earlyout">Early Out</span>&nbsp;before checkout opens',
+    legend_row_notout: '<span class="badge badge-notout">Not Out</span>&nbsp;only one scan',
+    legend_row_leftlate: '<span class="badge badge-leftlate">Left Late</span>&nbsp;after checkout window',
+    legend_row_absent: '<span class="badge badge-absent">Absent</span>&nbsp;no events',
+    col_first_scan: 'First Scan',
+    col_in_status: 'In Status',
+    col_last_scan: 'Last Scan',
+    col_out_status: 'Out Status',
+    col_scans: 'Scans',
+    col_shift_window: 'Shift Window',
+    compliance_title_dated: 'Compliance — {date}',
+    summary_title_dated: 'Summary — {date}',
+    summary_intro: 'Totals below use the same rules as Compliance: on-time first scan (check-in window) and on-time last scan (checkout window), with at least two scans. Amounts sum each eligible employee’s current daily rate from Administration.',
+    summary_stat_scans: 'With attendance',
+    summary_stat_eligible: 'Eligible for payment',
+    summary_stat_payout: 'Total to pay (TZS)',
+    summary_zero_attendance: '0 with attendance',
+    summary_n_attendance: '{n} with attendance',
+    sms_gate_title: 'SMS — admin only',
+    sms_gate_body: 'Eligibility SMS history and the message template are available after you sign in with the <strong>same password</strong> as the Administration tab. You can also unlock Administration first, then return here.',
+    ph_admin_password: 'Administrator password',
+    btn_unlock_sms: 'Unlock SMS',
+    sms_main_heading: 'SMS log & template',
+    btn_refresh_all: '↺ Refresh all',
+    btn_sign_out_title: 'End administrator session (SMS + Administration)',
+    btn_sign_out: 'Sign out',
+    btn_sign_out_admin_title: 'Clear admin session on this tab',
+    sms_how_title: 'How to edit the message template',
+    sms_how_list: '<li>Type your SMS text in the box below. Keep it short (one SMS is ~160 characters in many networks).</li><li>Use <strong>placeholders</strong> exactly as written — they are replaced when the message is sent: <code>{name}</code> employee name, <code>{amount}</code> daily rate number, <code>{date}</code> work date, <code>{currency}</code> usually TZS.</li><li>Click <strong>Save template</strong>. New eligibility messages will use the saved text.</li><li>Leave the box empty and save to use the <strong>built-in default</strong> again (see hint under the box).</li>',
+    sms_examples_title: 'Examples (copy and change wording as you like)',
+    sms_your_template: 'Your template',
+    ph_sms_template: 'Leave empty for default, or write your message with {name} {amount} {date} {currency}',
+    btn_save_template: 'Save template',
+    sms_status_guide_title: 'Status guide',
+    sms_status_guide_body: '<strong>sent</strong> — accepted by Textify. <strong>delivered</strong> / <strong>pending</strong> / <strong>sending</strong> — from Textify or your webhook. <strong>failed</strong> — not sent or rejected; see the Error column. One row per employee per work day; failed rows can retry on the next poller run if the employee is still eligible.',
+    sms_sent_messages: 'Sent messages',
+    ph_employee_id: 'Employee ID',
+    btn_previous: 'Previous',
+    btn_next: 'Next',
+    emp_register_title: 'Employee Register',
+    btn_add_employee: '+ Add Employee',
+    emp_tab_intro: 'Lists everyone who has ever swiped: distinct IDs from <strong>attlog</strong> (device feed) and <strong>attendance_log</strong> (processed scans), with no date limit. HR fields come from the register when present.',
+    report_daily_title: 'Daily Attendance Report',
+    report_daily_desc: 'Check-in / check-out times and compliance for a single day',
+    report_monthly_title: 'Monthly Attendance Report',
+    report_monthly_desc: 'Full month view — attendance tendencies per employee',
+    label_month: 'Month',
+    ph_year: '2026',
+    btn_preview: '↺ Preview',
+    btn_export_excel: '⬇ Export Excel',
+    btn_export_pdf: '⬇ Export PDF',
+    col_name: 'Name',
+    col_id: 'ID',
+    col_phone: 'Phone',
+    col_check_in: 'Check In',
+    col_check_out: 'Check Out',
+    col_date: 'Date',
+    col_daily_rate: 'Daily Rate',
+    col_provider: 'Provider',
+    col_last_swipe: 'Last swipe',
+    col_actions: 'Actions',
+    col_amount: 'Amount',
+    col_message: 'Message',
+    col_textify_id: 'Textify ID',
+    col_status: 'Status',
+    col_error: 'Error',
+    col_sent: 'Sent',
+    col_work_date: 'Work date',
+    col_min_late: 'Min Late',
+    month_1: 'January', month_2: 'February', month_3: 'March', month_4: 'April',
+    month_5: 'May', month_6: 'June', month_7: 'July', month_8: 'August',
+    month_9: 'September', month_10: 'October', month_11: 'November', month_12: 'December',
+    modal_add_employee: 'Add Employee',
+    modal_edit_employee: 'Edit Employee',
+    modal_add_stub: 'Add to HR register (from attlog)',
+    label_emp_id: 'Employee ID',
+    label_emp_id_hint: '(type to search existing)',
+    ph_search_id: 'Type ID or search name...',
+    label_first_name: 'First Name',
+    label_last_name: 'Last Name',
+    label_phone: 'Phone Number',
+    label_daily_rate: 'Daily Rate (TZS)',
+    ph_rate: '15000',
+    ph_provider: 'vodacom',
+    label_shift_override: 'Shift override',
+    label_shift_override_hint: '(optional — empty = company default)',
+    opt_company_default: '— Company default —',
+    btn_save_employee: 'Save Employee',
+    btn_cancel: 'Cancel',
+    admin_lock_title: 'Administrator access required',
+    ph_enter_admin: 'Enter admin password',
+    btn_unlock: 'Unlock',
+    admin_shift_config: 'Shift Configuration',
+    admin_add_shift: 'Add New Shift',
+    label_shift_name: 'Shift Name',
+    ph_night_shift: 'Night Shift',
+    label_ci_opens: 'Check-in Opens',
+    label_ci_closes: 'Check-in Closes',
+    label_co_opens: 'Check-out Opens',
+    label_co_closes: 'Check-out Closes',
+    btn_add_shift: 'Add Shift',
+    admin_add_employee: 'Add / Update Employee',
+    ph_emp001: 'EMP001',
+    admin_sms_hint: '<strong>SMS</strong> log and eligibility message template are on the <strong>SMS</strong> tab (same admin password).',
+    err_enter_admin_pw: 'Enter the admin password',
+    err_incorrect_password: 'Incorrect password',
+    err_connection: 'Connection error',
+    toast_admin_session_ended: 'Administrator session ended',
+    st_on_time: 'ON TIME',
+    st_late: 'LATE',
+    st_early_out: 'EARLY OUT',
+    st_not_out: 'NOT OUT',
+    st_absent: 'ABSENT',
+    st_left_late: 'LEFT LATE',
+    event_check_in: 'CHECK IN',
+    event_check_out: 'CHECK OUT',
+    pay_queued: 'Queued',
+    pay_pending: 'Pending',
+    shift_word: 'Shift',
+    shift_in_short: 'In:',
+    shift_out_short: 'Out:',
+    live_no_events: 'NO EVENTS TODAY',
+    live_conn_error: 'CONNECTION ERROR',
+    compliance_zero_employees: '0 employees',
+    compliance_n_employees: '{n} employees',
+    no_data_date: 'NO DATA FOR THIS DATE',
+    err_load_compliance: 'Failed to load compliance',
+    err_load_summary: 'Failed to load summary',
+    could_not_load_summary: 'Could not load summary',
+    scans_loading: 'Loading…',
+    scans_no_scans: 'No scans for this date',
+    scans_view_all: 'View all scans',
+    scans_pay_flag: 'pay',
+    err_load_scans_generic: 'Could not load scans',
+    admin_incorrect_pw: 'INCORRECT PASSWORD',
+    toast_choose_shift: 'Choose a shift',
+    toast_default_shift_ok: 'Company default shift updated',
+    toast_failed: 'Failed',
+    toast_error_detail: 'Error: {detail}',
+    shift_saved: 'Shift saved ✓',
+    shift_name_required: 'Shift name required',
+    shift_added: 'Shift added ✓',
+    emp_id_required: 'Employee ID required',
+    emp_saved: 'Employee saved ✓',
+    no_employees_registered: 'NO EMPLOYEES REGISTERED',
+    sms_default_prefix: 'Default (if empty): ',
+    sms_template_saved: 'SMS template saved',
+    sms_log_page: 'Page {page} of {pages} — {total} row(s)',
+    no_sms_records: 'No SMS records',
+    emp_tab_conn_error: 'CONNECTION ERROR',
+    emp_tab_empty: 'NO ONE IN ATTLOG YET — SWIPES FROM THE DEVICE WILL APPEAR HERE',
+    emp_swipes_attlog: '{n} swipes in attlog',
+    btn_edit: 'Edit',
+    btn_delete: 'Delete',
+    btn_purge: 'Purge all',
+    emp_unlock_admin_edit: 'Unlock Administration to edit',
+    company_default: 'company default',
+    shift_override: 'override',
+    toast_unlock_admin_first: 'Unlock Administration first to add or edit employees',
+    err_load_employee: 'Failed to load employee: {detail}',
+    confirm_delete: 'Delete employee {name} ({id})?',
+    toast_only_attlog: 'Only in attlog — not removed from device logs.',
+    toast_nothing_delete: 'Nothing to delete (not in register).',
+    toast_emp_deleted: 'Employee deleted',
+    confirm_purge_attlog: 'No HR record found for {name} ({id}), but they exist in the device feed (attlog).\n\nPurge ALL their data?\n  • attlog (device swipes)\n  • attendance_log\n  • payment_queue\n  • sms_log\n\nThis cannot be undone. New device events from HIKCentral will recreate the attlog row again.',
+    confirm_delete_full: 'Delete {name} ({id})?\n\nThis will remove them from the HR register AND purge ALL related history (device swipes, attendance, payment queue, SMS). This cannot be undone.',
+    toast_emp_purged: 'Employee fully purged',
+    toast_purged_summary: 'Purged: HR {employeex}, attlog {attlog}, attendance {attendance_log}, queue {payment_queue}, SMS {sms_log}',
+    err_emp_id_modal: 'Employee ID required',
+    select_date: 'Select a date',
+    enter_year: 'Enter a year',
+    select_date_first: 'Select a date first',
+    enter_year_first: 'Enter a year first',
+    no_data_period: 'NO DATA FOR THIS PERIOD',
+    download_started: 'Download started ✓',
+    export_failed: 'Export failed: {msg}',
+    shift_company_default_title: 'Company default shift',
+    shift_company_default_blurb: 'Everyone without an individual shift uses this for compliance, reports, and new swipes. Assign a different shift on an employee only when they need an override.',
+    shift_add_first: 'Add a shift below first',
+    shift_save_default: 'Save default',
+    shift_default_badge: 'DEFAULT',
+    shift_active: 'Active',
+    shift_inactive: 'Inactive',
+    btn_edit_short: 'Edit',
+    seg_before: 'Before',
+    seg_work: '— work period —',
+    seg_after: 'After',
+    shift_timeline_in: 'IN',
+    shift_timeline_out: 'OUT',
+    form_checkin_window: 'Check-in window',
+    form_checkout_window: 'Check-out window',
+    shift_help_in: 'Swipe before {end} = ON TIME &nbsp;|&nbsp; After = LATE',
+    shift_help_out: 'Swipe after {start} = ON TIME &nbsp;|&nbsp; Before = EARLY OUT',
+    btn_save: 'Save',
+    delta_late: '+{m}m late',
+    delta_early: '-{m}m early',
+    delta_late_out: '+{m}m late out',
+  },
+  sw: {
+    doc_title: 'SmartPay · Mahudhurio',
+    nav_aria: 'Urambazaji wa programu',
+    breadcrumb_aria: 'Njia ya ukurasa',
+    lang_en_title: 'Kiingereza',
+    lang_sw_title: 'Kiswahili',
+    lang_group: 'Lugha',
+    brand_subtitle: 'Mahudhurio',
+    tab_live: 'Matukio moja kwa moja',
+    tab_compliance: 'Uzingatifu',
+    tab_summary: 'Muhtasari wa siku',
+    tab_employees: 'Wafanyakazi',
+    tab_reports: 'Ripoti',
+    tab_sms: 'SMS',
+    tab_admin: 'Usimamizi',
+    live_badge: 'Moja kwa moja',
+    theme_toggle_title: 'Badili mwanga/giza',
+    stat_checked_in: 'Walioingia leo',
+    stat_checked_out: 'Waliotoka',
+    stat_payments_queued: 'Malipo yaliyopangwa',
+    stat_total_employees: 'Jumla ya wafanyakazi',
+    live_table_title: 'Matukio ya leo',
+    live_refresh_hint: 'Inabadilisha kila sekunde 10',
+    live_updated: 'Imesasishwa {time}',
+    col_employee: 'Mfanyakazi',
+    col_event: 'Tukio',
+    col_time: 'Muda',
+    col_shift: 'Shift',
+    col_payment: 'Malipo',
+    loading: 'INAPAKIA...',
+    loading_ellipsis: 'INAPAKIA…',
+    loading_soft: 'Inapakia…',
+    label_date: 'Tarehe',
+    btn_refresh: '↺ Onyesha upya',
+    legend_key: 'Funguo:',
+    legend_row_ontime: '<span class="badge badge-ontime">Kwa wakati</span>&nbsp;ndani ya dirisha',
+    legend_row_late: '<span class="badge badge-late">Kuchelewa</span>&nbsp;baada ya kuingia kuisha',
+    legend_row_earlyout: '<span class="badge badge-earlyout">Kutoka mapema</span>&nbsp;kabla ya kutoka kufunguliwa',
+    legend_row_notout: '<span class="badge badge-notout">Hajatoka</span>&nbsp;kusoma kimoja tu',
+    legend_row_leftlate: '<span class="badge badge-leftlate">Kutoka kuchelewa</span>&nbsp;baada ya dirisha la kutoka',
+    legend_row_absent: '<span class="badge badge-absent">Hajapatikana</span>&nbsp;hakuna matukio',
+    col_first_scan: 'Kusoma kwanza',
+    col_in_status: 'Hali ya kuingia',
+    col_last_scan: 'Kusoma mwisho',
+    col_out_status: 'Hali ya kutoka',
+    col_scans: 'Idadi ya kusomeka',
+    col_shift_window: 'Dirisha la shift',
+    compliance_title_dated: 'Uzingatifu — {date}',
+    summary_title_dated: 'Muhtasari — {date}',
+    summary_intro: 'Jumla hapa zinatumia sheria sawa na Uzingatifu: kusoma kwanza kwa wakati (dirisha la kuingia) na kusoma la mwisho kwa wakati (dirisha la kutoka), na angalau makusoma mawili. Kiasi ni jumla ya kila mfanyakaye stahiki kwa kiwango cha siku kinachotumika kutoka Usimamizi.',
+    summary_stat_scans: 'Walio na mahudhurio',
+    summary_stat_eligible: 'Wastahiki wa malipo',
+    summary_stat_payout: 'Jumla ya kulipa (TZS)',
+    summary_zero_attendance: '0 walio na mahudhurio',
+    summary_n_attendance: '{n} walio na mahudhurio',
+    sms_gate_title: 'SMS — kwa msimamizi tu',
+    sms_gate_body: 'Historia ya SMS za ustahiki na kiolezo cha ujumbe vinapatikana baada ya kuingia kwa <strong>nenosiri sawa</strong> na kichupo cha Usimamizi. Unaweza pia kufungua Usimamizi kwanza, kisha urudi hapa.',
+    ph_admin_password: 'Nenosiri la msimamizi',
+    btn_unlock_sms: 'Fungua SMS',
+    sms_main_heading: 'Kumbukumbu ya SMS na kiolezo',
+    btn_refresh_all: '↺ Onyesha upya vyote',
+    btn_sign_out_title: 'Maliza kipindi cha msimamizi (SMS + Usimamizi)',
+    btn_sign_out: 'Toka',
+    btn_sign_out_admin_title: 'Futa kipindi cha msimamizi kwenye kichupo hiki',
+    sms_how_title: 'Jinsi ya kuhariri kiolezo cha ujumbe',
+    sms_how_list: '<li>Andika maandishi ya SMS kwenye kisanduku hapa chini. Weka fupi (SMS moja ni takriban herufi 160 katika mitandao mingi).</li><li>Tumia <strong>mahali pa maandishi</strong> kama yalivyoandikwa — yanabadilishwa ujumbe unapotumwa: <code>{name}</code> jina la mfanyakazi, <code>{amount}</code> kiwango cha siku, <code>{date}</code> tarehe ya kazi, <code>{currency}</code> kawaida TZS.</li><li>Bonyeza <strong>Hifadhi kiolezo</strong>. Ujumbe mpya wa ustahiki utatumia maandishi yaliyohifadhiwa.</li><li>Acha kisanduku tupu na uhifadhi ili kutumia <strong>chaguo-msingi</strong> tena (ona kidokezo chini ya kisanduku).</li>',
+    sms_examples_title: 'Mifano (nakili na badili maneno unavyopenda)',
+    sms_your_template: 'Kiolezo chako',
+    ph_sms_template: 'Acha tupu kwa chaguo-msingi, au andika ujumbe na {name} {amount} {date} {currency}',
+    btn_save_template: 'Hifadhi kiolezo',
+    sms_status_guide_title: 'Mwongozo wa hali',
+    sms_status_guide_body: '<strong>sent</strong> — limekubaliwa na Textify. <strong>delivered</strong> / <strong>pending</strong> / <strong>sending</strong> — kutoka Textify au webhook yako. <strong>failed</strong> — halikutumwa au limekataliwa; angalia safu ya Makosa. Safu moja kwa mfanyakazi kwa siku ya kazi; zilizoshindwa zinaweza kujaribiwa tena endapo mfanyakazi bado ni mstahiki.',
+    sms_sent_messages: 'Ujumbe ulio tumwa',
+    ph_employee_id: 'Kitambulisho cha mfanyakazi',
+    btn_previous: 'Iliyopita',
+    btn_next: 'Ifuatayo',
+    emp_register_title: 'Daftari la wafanyakazi',
+    btn_add_employee: '+ Ongeza mfanyakazi',
+    emp_tab_intro: 'Inaorodhesha kila aliye-scan: vitambulisho tofauti kutoka <strong>attlog</strong> (kulisha kutoka kifaa) na <strong>attendance_log</strong> (makusoma yaliyochakata), bila kikomo cha tarehe. Sehemu za HR zinatoka daftari zinapopatikana.',
+    report_daily_title: 'Ripoti ya mahudhurio ya kila siku',
+    report_daily_desc: 'Muda wa kuingia / kutoka na uzingatifu kwa siku moja',
+    report_monthly_title: 'Ripoti ya mahudhurio ya kila mwezi',
+    report_monthly_desc: 'Mwonekano wa mwezi mzima — mwenendo wa mahudhurio kwa kila mfanyakazi',
+    label_month: 'Mwezi',
+    ph_year: '2026',
+    btn_preview: '↺ Hakiki',
+    btn_export_excel: '⬇ Pakua Excel',
+    btn_export_pdf: '⬇ Pakua PDF',
+    col_name: 'Jina',
+    col_id: 'Kitambulisho',
+    col_phone: 'Simu',
+    col_check_in: 'Kuingia',
+    col_check_out: 'Kutoka',
+    col_date: 'Tarehe',
+    col_daily_rate: 'Kiwango cha siku',
+    col_provider: 'Mtoa huduma',
+    col_last_swipe: 'Scan ya mwisho',
+    col_actions: 'Vitendo',
+    col_amount: 'Kiasi',
+    col_message: 'Ujumbe',
+    col_textify_id: 'Kitambulisho cha Textify',
+    col_status: 'Hali',
+    col_error: 'Kosa',
+    col_sent: 'Imetumwa',
+    col_work_date: 'Tarehe ya kazi',
+    col_min_late: 'Kuchelewa kidogo',
+    month_1: 'Januari', month_2: 'Februari', month_3: 'Machi', month_4: 'Aprili',
+    month_5: 'Mei', month_6: 'Juni', month_7: 'Julai', month_8: 'Agosti',
+    month_9: 'Septemba', month_10: 'Oktoba', month_11: 'Novemba', month_12: 'Desemba',
+    modal_add_employee: 'Ongeza mfanyakazi',
+    modal_edit_employee: 'Hariri mfanyakazi',
+    modal_add_stub: 'Ongeza kwenye daftari la HR (kutoka attlog)',
+    label_emp_id: 'Kitambulisho cha mfanyakazi',
+    label_emp_id_hint: '(andika kutafuta aliyeopo)',
+    ph_search_id: 'Andika kitambulisho au tafuta jina...',
+    label_first_name: 'Jina la kwanza',
+    label_last_name: 'Jina la ukoo',
+    label_phone: 'Nambari ya simu',
+    label_daily_rate: 'Kiwango cha siku (TZS)',
+    ph_rate: '15000',
+    ph_provider: 'vodacom',
+    label_shift_override: 'Shift maalum',
+    label_shift_override_hint: '(si lazima — tupu = chaguo-msingi la kampuni)',
+    opt_company_default: '— Chaguo-msingi la kampuni —',
+    btn_save_employee: 'Hifadhi mfanyakazi',
+    btn_cancel: 'Ghairi',
+    admin_lock_title: 'Unahitaji kuingia kama msimamizi',
+    ph_enter_admin: 'Ingiza nenosiri la msimamizi',
+    btn_unlock: 'Fungua',
+    admin_shift_config: 'Mipangilio ya shift',
+    admin_add_shift: 'Ongeza shift mpya',
+    label_shift_name: 'Jina la shift',
+    ph_night_shift: 'Shift ya usiku',
+    label_ci_opens: 'Kuingia kuanza',
+    label_ci_closes: 'Kuingia kuisha',
+    label_co_opens: 'Kutoka kuanza',
+    label_co_closes: 'Kutoka kuisha',
+    btn_add_shift: 'Ongeza shift',
+    admin_add_employee: 'Ongeza / sasisha mfanyakazi',
+    ph_emp001: 'EMP001',
+    admin_sms_hint: '<strong>SMS</strong> kumbukumbu na kiolezo cha ujumbe wa ustahiki viko kwenye kichupo <strong>SMS</strong> (nenosiri sawa la msimamizi).',
+    err_enter_admin_pw: 'Ingiza nenosiri la msimamizi',
+    err_incorrect_password: 'Nenosiri si sahihi',
+    err_connection: 'Hitilafu ya muunganisho',
+    toast_admin_session_ended: 'Kipindi cha msimamizi kimeisha',
+    st_on_time: 'KWA WAKATI',
+    st_late: 'KUCHELEWA',
+    st_early_out: 'KUTOKA MAPEMA',
+    st_not_out: 'HAJATOKA',
+    st_absent: 'HAJAPATIKANA',
+    st_left_late: 'KUTOKA KUCHELEWA',
+    event_check_in: 'Kuingia',
+    event_check_out: 'Kutoka',
+    pay_queued: 'Imepangwa',
+    pay_pending: 'Inasubiri',
+    shift_word: 'Shift',
+    shift_in_short: 'Kuingia:',
+    shift_out_short: 'Kutoka:',
+    live_no_events: 'HAKUNA MATUKIO LEO',
+    live_conn_error: 'HITILAFU YA MUUNGANISHO',
+    compliance_zero_employees: '0 wafanyakazi',
+    compliance_n_employees: '{n} wafanyakazi',
+    no_data_date: 'HAKUNA DATA KWA TAREHE HII',
+    err_load_compliance: 'Imeshindwa kupakia uzingatifu',
+    err_load_summary: 'Imeshindwa kupakia muhtasari',
+    could_not_load_summary: 'Haikuweza kupakia muhtasari',
+    scans_loading: 'Inapakia…',
+    scans_no_scans: 'Hakuna makusoma kwa tarehe hii',
+    scans_view_all: 'Ona makusoma yote',
+    scans_pay_flag: 'malipo',
+    err_load_scans_generic: 'Haikuweza kupakia makusoma',
+    admin_incorrect_pw: 'NENOSIRI SI SAHIHI',
+    toast_choose_shift: 'Chagua shift',
+    toast_default_shift_ok: 'Shift chaguo-msingi la kampuni imesasishwa',
+    toast_failed: 'Imeshindwa',
+    toast_error_detail: 'Kosa: {detail}',
+    shift_saved: 'Shift imehifadhiwa ✓',
+    shift_name_required: 'Jina la shift linahitajika',
+    shift_added: 'Shift imeongezwa ✓',
+    emp_id_required: 'Kitambulisho cha mfanyakazi kinahitajika',
+    emp_saved: 'Mfanyakazi amehifadhiwa ✓',
+    no_employees_registered: 'HAKUNA WAFANYAKAZI WALIOSAJILIWA',
+    sms_default_prefix: 'Chaguo-msingi (ikiwa tupu): ',
+    sms_template_saved: 'Kiolezo cha SMS kimehifadhiwa',
+    sms_log_page: 'Ukurasa {page} kati ya {pages} — safu {total}',
+    no_sms_records: 'Hakuna rekodi za SMS',
+    emp_tab_conn_error: 'HITILAFU YA MUUNGANISHO',
+    emp_tab_empty: 'HAKUNA MTU KWENYE ATTLOG BADO — MAKUSOMA KUTOKA KIFAA YATAONEKANA HAPA',
+    emp_swipes_attlog: 'Makusoma {n} kwenye attlog',
+    btn_edit: 'Hariri',
+    btn_delete: 'Futa',
+    btn_purge: 'Futa yote',
+    emp_unlock_admin_edit: 'Fungua Usimamizi ili kuhariri',
+    company_default: 'chaguo-msingi la kampuni',
+    shift_override: 'maalum',
+    toast_unlock_admin_first: 'Fungua Usimamizi kwanza kuongeza au kuhariri wafanyakazi',
+    err_load_employee: 'Imeshindwa kupakia mfanyakazi: {detail}',
+    confirm_delete: 'Futa mfanyakazi {name} ({id})?',
+    toast_only_attlog: 'Yuko attlog tu — haiondolewi kwenye kumbukumbu za kifaa.',
+    toast_nothing_delete: 'Hakuna cha kufuta (hayupo kwenye daftari).',
+    toast_emp_deleted: 'Mfanyakazi amefutwa',
+    confirm_purge_attlog: 'Hakuna rekodi ya HR kwa {name} ({id}), lakini yupo kwenye mlisho wa kifaa (attlog).\n\nFuta data YOTE yake?\n  • attlog (makusoma ya kifaa)\n  • attendance_log\n  • payment_queue\n  • sms_log\n\nKitendo hiki hakiwezi kubatilishwa. Matukio mapya kutoka HIKCentral yatatengeneza upya safu ya attlog.',
+    confirm_delete_full: 'Futa {name} ({id})?\n\nHii itamuondoa kutoka daftari la HR NA kufuta historia YOTE inayohusiana (makusoma ya kifaa, mahudhurio, foleni ya malipo, SMS). Kitendo hiki hakiwezi kubatilishwa.',
+    toast_emp_purged: 'Mfanyakazi amefutwa kabisa',
+    toast_purged_summary: 'Imefutwa: HR {employeex}, attlog {attlog}, mahudhurio {attendance_log}, foleni {payment_queue}, SMS {sms_log}',
+    err_emp_id_modal: 'Kitambulisho cha mfanyakazi kinahitajika',
+    select_date: 'Chagua tarehe',
+    enter_year: 'Ingiza mwaka',
+    select_date_first: 'Chagua tarehe kwanza',
+    enter_year_first: 'Ingiza mwaka kwanza',
+    no_data_period: 'HAKUNA DATA KWA KIPINDI HIKI',
+    download_started: 'Upakuaji umeanza ✓',
+    export_failed: 'Upakuaji umeshindwa: {msg}',
+    shift_company_default_title: 'Shift chaguo-msingi la kampuni',
+    shift_company_default_blurb: 'Kila mtu asiye na shift binafsi hutumia hii kwa uzingatifu, ripoti, na makusoma mapya. Weka shift tofauti kwa mfanyakazi tu anapohitaji.',
+    shift_add_first: 'Ongeza shift hapa chini kwanza',
+    shift_save_default: 'Hifadhi chaguo-msingi',
+    shift_default_badge: 'CHAGUO-MSINGI',
+    shift_active: 'Hai',
+    shift_inactive: 'Haijatumika',
+    btn_edit_short: 'Hariri',
+    seg_before: 'Kabla',
+    seg_work: '— kipindi cha kazi —',
+    seg_after: 'Baada',
+    shift_timeline_in: 'INGIA',
+    shift_timeline_out: 'TOKA',
+    form_checkin_window: 'Dirisha la kuingia',
+    form_checkout_window: 'Dirisha la kutoka',
+    shift_help_in: 'Scan kabla ya {end} = KWA WAKATI &nbsp;|&nbsp; Baada = KUCHELEWA',
+    shift_help_out: 'Scan baada ya {start} = KWA WAKATI &nbsp;|&nbsp; Kabla = KUTOKA MAPEMA',
+    btn_save: 'Hifadhi',
+    delta_late: '+{m} dk kuchelewa',
+    delta_early: '-{m} dk mapema',
+    delta_late_out: '+{m} dk kutoka kuchelewa',
+  },
+};
+
+function tx(key, vars) {
+  let s = (MESSAGES[appLocale] && MESSAGES[appLocale][key]) || MESSAGES.en[key] || key;
+  if (vars && typeof vars === 'object') {
+    Object.keys(vars).forEach((k) => {
+      s = String(s).split('{' + k + '}').join(String(vars[k]));
+    });
+  }
+  return s;
+}
+
+function tabLabel(name) {
+  const k = 'tab_' + name;
+  if (MESSAGES.en[k] !== undefined) return tx(k);
+  return name;
+}
+
+function applyI18n() {
+  document.title = tx('doc_title');
+  const aside = document.getElementById('sidebar-aside');
+  if (aside) aside.setAttribute('aria-label', tx('nav_aria'));
+  const bcNav = document.getElementById('breadcrumb-nav');
+  if (bcNav) bcNav.setAttribute('aria-label', tx('breadcrumb_aria'));
+
+  document.querySelectorAll('[data-i18n]').forEach((el) => {
+    const k = el.getAttribute('data-i18n');
+    if (k) el.textContent = tx(k);
+  });
+  document.querySelectorAll('[data-i18n-html]').forEach((el) => {
+    const k = el.getAttribute('data-i18n-html');
+    if (k) el.innerHTML = tx(k);
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach((el) => {
+    const k = el.getAttribute('data-i18n-placeholder');
+    if (k) el.placeholder = tx(k);
+  });
+  document.querySelectorAll('[data-i18n-title]').forEach((el) => {
+    const k = el.getAttribute('data-i18n-title');
+    if (k) el.title = tx(k);
+  });
+  document.querySelectorAll('[data-i18n-aria-label]').forEach((el) => {
+    const k = el.getAttribute('data-i18n-aria-label');
+    if (k) el.setAttribute('aria-label', tx(k));
+  });
+  const rm = document.getElementById('report-month');
+  if (rm) {
+    Array.from(rm.options).forEach((opt) => {
+      const v = parseInt(opt.value, 10);
+      if (v >= 1 && v <= 12) opt.textContent = tx('month_' + v);
+    });
+  }
+}
+
+function refreshActivePanelData() {
+  const panel = document.querySelector('.panel.active');
+  if (!panel) return;
+  const id = panel.id;
+  if (id === 'panel-live') {
+    loadLive();
+    loadStats();
+  } else if (id === 'panel-compliance') loadCompliance();
+  else if (id === 'panel-summary') loadSummary();
+  else if (id === 'panel-employees') loadEmployeeTab();
+  else if (id === 'panel-sms' && adminToken) {
+    loadSmsSettings();
+    loadSmsLogs(smsLogsPage);
+  } else if (id === 'panel-admin' && adminToken) {
+    loadShiftConfig();
+    loadEmployees();
+  }
+}
+
+function setLocale(lang) {
+  if (lang !== 'en' && lang !== 'sw') return;
+  appLocale = lang;
+  try {
+    localStorage.setItem(LOCALE_KEY, lang);
+  } catch (e) {}
+  document.documentElement.lang = lang === 'sw' ? 'sw' : 'en';
+  const bEn = document.getElementById('lang-en');
+  const bSw = document.getElementById('lang-sw');
+  if (bEn) bEn.classList.toggle('active', lang === 'en');
+  if (bSw) bSw.classList.toggle('active', lang === 'sw');
+  applyI18n();
+  const activeTab = document.querySelector('.sidebar-nav .tab.active');
+  if (activeTab && activeTab.id && activeTab.id.startsWith('tab-')) {
+    const tabName = activeTab.id.slice(4);
+    const ph = document.getElementById('page-heading');
+    const bc = document.getElementById('breadcrumb-current');
+    const label = tabLabel(tabName);
+    if (ph) ph.textContent = label;
+    if (bc) bc.textContent = label;
+  }
+  refreshActivePanelData();
+  updateClock();
+}
+
+function initLocale() {
+  let saved = 'en';
+  try {
+    saved = localStorage.getItem(LOCALE_KEY) || 'en';
+  } catch (e) {}
+  if (saved !== 'sw' && saved !== 'en') saved = 'en';
+  appLocale = saved;
+  document.documentElement.lang = saved === 'sw' ? 'sw' : 'en';
+  const bEn = document.getElementById('lang-en');
+  const bSw = document.getElementById('lang-sw');
+  if (bEn) bEn.classList.toggle('active', saved === 'en');
+  if (bSw) bSw.classList.toggle('active', saved === 'sw');
+  applyI18n();
+}
+
 const BASE = '';
 const ADMIN_SESSION_KEY = 'smartpay-admin-session';
-const TAB_LABELS = {
-  live: 'Live feed',
-  compliance: 'Compliance',
-  summary: 'Daily summary',
-  employees: 'Employees',
-  reports: 'Reports',
-  sms: 'SMS',
-  admin: 'Administration'
-};
 let adminToken = '';
 let smsLogsPage = 1;
 
@@ -1285,20 +1876,20 @@ async function smsGateLogin() {
   const pw = pwEl ? pwEl.value : '';
   const errEl = document.getElementById('sms-gate-error');
   if (!pw) {
-    if (errEl) errEl.textContent = 'Enter the admin password';
+    if (errEl) errEl.textContent = tx('err_enter_admin_pw');
     return;
   }
   try {
     const r = await fetch(BASE + '/api/admin/shifts', { headers: { 'x-admin-token': pw } });
     if (!r.ok) {
-      if (errEl) errEl.textContent = 'Incorrect password';
+      if (errEl) errEl.textContent = tx('err_incorrect_password');
       return;
     }
     if (errEl) errEl.textContent = '';
     unlockAdmin(pw);
     if (pwEl) pwEl.value = '';
   } catch (e) {
-    if (errEl) errEl.textContent = 'Connection error';
+    if (errEl) errEl.textContent = tx('err_connection');
   }
 }
 
@@ -1325,7 +1916,7 @@ function adminLogout() {
   document.getElementById('admin-pw-error').textContent = '';
   loadEmployeeTab();
   updateSmsPanelGate();
-  toast('Administrator session ended');
+  toast(tx('toast_admin_session_ended'));
 }
 
 async function restoreAdminSession() {
@@ -1343,7 +1934,8 @@ async function restoreAdminSession() {
 }
 
 function updateClock() {
-  document.getElementById('clock').textContent = new Date().toLocaleTimeString('en-GB',{hour12:false});
+  const loc = appLocale === 'sw' ? 'sw-TZ' : 'en-GB';
+  document.getElementById('clock').textContent = new Date().toLocaleTimeString(loc, { hour12: false });
 }
 setInterval(updateClock,1000); updateClock();
 
@@ -1352,7 +1944,7 @@ function showTab(name) {
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   document.getElementById('panel-'+name).classList.add('active');
   document.getElementById('tab-'+name).classList.add('active');
-  const label = TAB_LABELS[name] || name;
+  const label = tabLabel(name);
   const ph = document.getElementById('page-heading');
   const bc = document.getElementById('breadcrumb-current');
   if (ph) ph.textContent = label;
@@ -1410,20 +2002,50 @@ function fmtName(row) {
   return row.employee_id || row.id || '—';
 }
 
+function escHtml(s) {
+  if (s == null) return '';
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+const STATUS_KEYS = {
+  'ON TIME': 'st_on_time',
+  'LATE': 'st_late',
+  'EARLY OUT': 'st_early_out',
+  'NOT OUT': 'st_not_out',
+  'ABSENT': 'st_absent',
+  'LEFT LATE': 'st_left_late',
+};
+
+function statusDisplay(apiStatus) {
+  const k = STATUS_KEYS[apiStatus];
+  return k ? tx(k) : String(apiStatus || '');
+}
+
+function eventTypeLabel(et) {
+  if (et === 'CHECK_IN') return tx('event_check_in');
+  if (et === 'CHECK_OUT') return tx('event_check_out');
+  return String(et || '').replace(/_/g, ' ');
+}
+
 function complianceBadge(status) {
-  if(!status) return '<span class="badge badge-ignored">—</span>';
-  const map={'ON TIME':'badge-ontime','LATE':'badge-late','EARLY OUT':'badge-earlyout','NOT OUT':'badge-notout','ABSENT':'badge-absent','LEFT LATE':'badge-leftlate'};
-  return `<span class="badge ${map[status]||'badge-ignored'}">${status}</span>`;
+  if (!status) return '<span class="badge badge-ignored">—</span>';
+  const map = { 'ON TIME': 'badge-ontime', 'LATE': 'badge-late', 'EARLY OUT': 'badge-earlyout', 'NOT OUT': 'badge-notout', 'ABSENT': 'badge-absent', 'LEFT LATE': 'badge-leftlate' };
+  const label = statusDisplay(status);
+  return `<span class="badge ${map[status] || 'badge-ignored'}">${escHtml(label)}</span>`;
 }
 
 function deltaLabel(minutes, type) {
-  if(minutes===null||minutes===undefined) return '';
-  const m=parseFloat(minutes);
-  if(type==='late') return m<=0?'<span class="delta-ok">—</span>':`<span class="delta-late">+${Math.round(m)}m late</span>`;
-  if(type==='early') {
-    if(m===0) return '<span class="delta-ok">—</span>';
-    if(m>0)   return `<span class="delta-early">-${Math.round(m)}m early</span>`;
-    if(m<0)   return `<span style="color:#b366ff;font-family:var(--mono);font-size:11px">+${Math.round(Math.abs(m))}m late out</span>`;
+  if (minutes === null || minutes === undefined) return '';
+  const m = parseFloat(minutes);
+  if (type === 'late') return m <= 0 ? '<span class="delta-ok">—</span>' : `<span class="delta-late">${escHtml(tx('delta_late', { m: Math.round(m) }))}</span>`;
+  if (type === 'early') {
+    if (m === 0) return '<span class="delta-ok">—</span>';
+    if (m > 0) return `<span class="delta-early">${escHtml(tx('delta_early', { m: Math.round(m) }))}</span>`;
+    if (m < 0) return `<span style="color:#b366ff;font-family:var(--mono);font-size:11px">${escHtml(tx('delta_late_out', { m: Math.round(Math.abs(m)) }))}</span>`;
   }
   return '';
 }
@@ -1440,23 +2062,25 @@ async function loadStats() {
 }
 
 async function loadLive() {
+  const loc = appLocale === 'sw' ? 'sw-TZ' : 'en-GB';
   try {
     const j=await(await fetch(BASE+'/api/attendance/live')).json();
     const tbody=document.getElementById('live-body');
-    if(!j.success||!j.data.length){tbody.innerHTML='<tr><td colspan="5" class="no-data">NO EVENTS TODAY</td></tr>';return;}
+    if(!j.success||!j.data.length){tbody.innerHTML='<tr><td colspan="5" class="no-data">'+escHtml(tx('live_no_events'))+'</td></tr>';return;}
     tbody.innerHTML=j.data.map(row=>{
       const bc=row.event_type==='CHECK_IN'?'badge-in':row.event_type==='CHECK_OUT'?'badge-out':'badge-ignored';
-      const pay=row.payment_triggered?'<span class="badge badge-ontime">Queued</span>':'<span class="badge badge-ignored">—</span>';
+      const pay=row.payment_triggered?'<span class="badge badge-ontime">'+escHtml(tx('pay_queued'))+'</span>':'<span class="badge badge-ignored">—</span>';
+      const evLabel = eventTypeLabel(row.event_type);
       return `<tr>
-        <td><div class="emp-name">${fmtName(row)}</div><div class="emp-id">${row.employee_id}</div></td>
-        <td><span class="badge ${bc}">${row.event_type.replace('_',' ')}</span></td>
+        <td><div class="emp-name">${fmtName(row)}</div><div class="emp-id">${escHtml(row.employee_id)}</div></td>
+        <td><span class="badge ${bc}">${escHtml(evLabel)}</span></td>
         <td><span class="time-val">${fmtTime(row.raw_event_time)}</span></td>
-        <td><span class="emp-id">Shift ${row.shift_id||1}</span></td>
+        <td><span class="emp-id">${escHtml(tx('shift_word'))} ${row.shift_id||1}</span></td>
         <td>${pay}</td>
       </tr>`;
     }).join('');
-    document.getElementById('live-updated').textContent='Updated '+new Date().toLocaleTimeString('en-GB');
-  } catch(e){document.getElementById('live-body').innerHTML='<tr><td colspan="5" class="no-data">CONNECTION ERROR</td></tr>';}
+    document.getElementById('live-updated').textContent = tx('live_updated', { time: new Date().toLocaleTimeString(loc, { hour12: false }) });
+  } catch(e){document.getElementById('live-body').innerHTML='<tr><td colspan="5" class="no-data">'+escHtml(tx('live_conn_error'))+'</td></tr>';}
 }
 
 function todayIsoDate() {
@@ -1472,13 +2096,13 @@ async function loadCompliance() {
   }
   try {
     const j=await(await fetch(BASE+'/api/attendance/compliance?date='+d)).json();
-    document.getElementById('compliance-title').textContent='Compliance — '+d;
+    document.getElementById('compliance-title').textContent = tx('compliance_title_dated', { date: d });
     const tbody=document.getElementById('compliance-body');
     if(!j.success||!j.data.length){
-      document.getElementById('compliance-count').textContent='0 employees';
-      tbody.innerHTML='<tr><td colspan="7" class="no-data">NO DATA FOR THIS DATE</td></tr>';return;
+      document.getElementById('compliance-count').textContent = tx('compliance_zero_employees');
+      tbody.innerHTML='<tr><td colspan="7" class="no-data">'+escHtml(tx('no_data_date'))+'</td></tr>';return;
     }
-    document.getElementById('compliance-count').textContent=j.data.length+' employees';
+    document.getElementById('compliance-count').textContent = tx('compliance_n_employees', { n: j.data.length });
     tbody.innerHTML=j.data.map(row=>`<tr>
       <td><div class="emp-name">${fmtName(row)}</div><div class="emp-id">${row.employee_id}</div></td>
       <td>
@@ -1495,11 +2119,11 @@ async function loadCompliance() {
       <td>
         <div class="emp-id">${row.shift_name||'—'}</div>
         <div class="emp-id" style="font-size:10px;margin-top:3px;color:var(--muted)">
-          In: ${row.checkin_start||'—'}–${row.checkin_end||'—'} &nbsp;|&nbsp; Out: ${row.checkout_start||'—'}–${row.checkout_end||'—'}
+          ${escHtml(tx('shift_in_short'))} ${row.checkin_start||'—'}–${row.checkin_end||'—'} &nbsp;|&nbsp; ${escHtml(tx('shift_out_short'))} ${row.checkout_start||'—'}–${row.checkout_end||'—'}
         </div>
       </td>
     </tr>`).join('');
-  } catch(e){toast('Failed to load compliance',false);}
+  } catch(e){toast(tx('err_load_compliance'),false);}
 }
 
 async function loadSummary() {
@@ -1528,33 +2152,33 @@ async function loadSummary() {
   };
   try {
     const j = await (await fetch(BASE + '/api/attendance/summary?date=' + encodeURIComponent(d))).json();
-    document.getElementById('summary-title').textContent = 'Summary — ' + d;
+    document.getElementById('summary-title').textContent = tx('summary_title_dated', { date: d });
     const tbody = document.getElementById('summary-body');
     const totals = j.totals || { employees_with_scans: 0, eligible_count: 0, eligible_total_amount: 0 };
     if (!j.success) {
       setSummaryTotals(null);
-      toast('Failed to load summary', false);
-      tbody.innerHTML = '<tr><td colspan="6" class="no-data">Could not load summary</td></tr>';
+      toast(tx('err_load_summary'), false);
+      tbody.innerHTML = '<tr><td colspan="6" class="no-data">' + escHtml(tx('could_not_load_summary')) + '</td></tr>';
       return;
     }
     setSummaryTotals(totals);
     if (!j.data || !j.data.length) {
-      document.getElementById('summary-count').textContent = '0 with attendance';
-      tbody.innerHTML = '<tr><td colspan="6" class="no-data">NO DATA FOR THIS DATE</td></tr>';
+      document.getElementById('summary-count').textContent = tx('summary_zero_attendance');
+      tbody.innerHTML = '<tr><td colspan="6" class="no-data">' + escHtml(tx('no_data_date')) + '</td></tr>';
       return;
     }
-    document.getElementById('summary-count').textContent = j.data.length + ' with attendance';
+    document.getElementById('summary-count').textContent = tx('summary_n_attendance', { n: j.data.length });
     tbody.innerHTML = j.data.map((row) => {
       const pay = row.payment_triggered
-        ? '<span class="badge badge-ontime">Queued</span>'
-        : '<span class="badge badge-pending">Pending</span>';
+        ? '<span class="badge badge-ontime">' + escHtml(tx('pay_queued')) + '</span>'
+        : '<span class="badge badge-pending">' + escHtml(tx('pay_pending')) + '</span>';
       const nm = fmtName(row);
       const n = Number(row.total_events) || 0;
       const eidAttr = encodeURIComponent(String(row.employee_id));
       const nameAttr = encodeURIComponent(nm);
       const scansCell =
         n > 0
-          ? `<button type="button" class="scan-link" data-scan-eid="${eidAttr}" data-scan-name="${nameAttr}" title="View all scans">${n}</button>`
+          ? `<button type="button" class="scan-link" data-scan-eid="${eidAttr}" data-scan-name="${nameAttr}" title="${escHtml(tx('scans_view_all'))}">${n}</button>`
           : `<span class="emp-id">0</span>`;
       return `<tr>
         <td><div class="emp-name">${nm}</div><div class="emp-id">${row.employee_id}</div></td>
@@ -1567,7 +2191,7 @@ async function loadSummary() {
     }).join('');
   } catch (e) {
     setSummaryTotals(null);
-    toast('Failed to load summary', false);
+    toast(tx('err_load_summary'), false);
   }
 }
 
@@ -1584,31 +2208,31 @@ async function openDailyScansModal(employeeId, displayName) {
   const bodyEl = document.getElementById('scans-modal-body');
   titleEl.textContent = displayName || String(employeeId);
   metaEl.textContent = String(employeeId) + ' · ' + d;
-  bodyEl.innerHTML = '<div class="no-data" style="padding:20px">Loading…</div>';
+  bodyEl.innerHTML = '<div class="no-data" style="padding:20px">' + escHtml(tx('scans_loading')) + '</div>';
   overlay.classList.add('open');
   try {
     const url = BASE + '/api/attendance/scans?date=' + encodeURIComponent(d) + '&employee_id=' + encodeURIComponent(employeeId);
     const j = await (await fetch(url)).json();
     if (!j.success) {
-      bodyEl.innerHTML = '<div class="no-data" style="padding:20px">' + (j.error || 'Could not load scans') + '</div>';
+      bodyEl.innerHTML = '<div class="no-data" style="padding:20px">' + escHtml(j.error || tx('err_load_scans_generic')) + '</div>';
       return;
     }
     if (!j.data || !j.data.length) {
-      bodyEl.innerHTML = '<div class="no-data" style="padding:20px">No scans for this date</div>';
+      bodyEl.innerHTML = '<div class="no-data" style="padding:20px">' + escHtml(tx('scans_no_scans')) + '</div>';
       return;
     }
     bodyEl.innerHTML = j.data.map((row, i) => {
       const et = row.event_type || 'SCAN';
       const bc = et === 'CHECK_IN' ? 'badge-in' : et === 'CHECK_OUT' ? 'badge-out' : 'badge-ignored';
-      const label = String(et).replace(/_/g, ' ');
+      const label = et === 'CHECK_IN' || et === 'CHECK_OUT' ? eventTypeLabel(et) : String(et).replace(/_/g, ' ');
       return `<div class="scans-list-row">
         <span class="emp-id">#${i + 1}</span>
         <span class="time-val">${fmtTime(row.raw_event_time)}</span>
-        <span><span class="badge ${bc}">${label}</span>${row.payment_triggered ? ' <span class="emp-id" style="font-size:10px">pay</span>' : ''}</span>
+        <span><span class="badge ${bc}">${escHtml(label)}</span>${row.payment_triggered ? ' <span class="emp-id" style="font-size:10px">' + escHtml(tx('scans_pay_flag')) + '</span>' : ''}</span>
       </div>`;
     }).join('');
   } catch (e) {
-    bodyEl.innerHTML = '<div class="no-data" style="padding:20px">Connection error</div>';
+    bodyEl.innerHTML = '<div class="no-data" style="padding:20px">' + escHtml(tx('err_connection')) + '</div>';
   }
 }
 
@@ -1633,7 +2257,7 @@ function adminLogin() {
     if(r.ok){
       unlockAdmin(pw);
     } else {
-      document.getElementById('admin-pw-error').textContent='INCORRECT PASSWORD';
+      document.getElementById('admin-pw-error').textContent = tx('admin_incorrect_pw');
     }
   });
 }
@@ -1650,14 +2274,14 @@ document.addEventListener('keydown',e=>{
 
 async function saveGlobalDefaultShift() {
   const sel = document.getElementById('global-default-shift-select');
-  if (!sel || !sel.value) { toast('Choose a shift', false); return; }
+  if (!sel || !sel.value) { toast(tx('toast_choose_shift'), false); return; }
   const r = await fetch(BASE + '/api/admin/settings/default-shift', {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', 'x-admin-token': adminToken },
     body: JSON.stringify({ shift_id: parseInt(sel.value, 10) }),
   });
   const j = await r.json();
-  toast(j.success ? 'Company default shift updated' : (j.error || 'Failed'), j.success);
+  toast(j.success ? tx('toast_default_shift_ok') : (j.error || tx('toast_failed')), j.success);
   if (j.success) loadShiftConfig();
 }
 
@@ -1667,62 +2291,62 @@ async function loadShiftConfig() {
   const defId = j.default_shift_id != null ? Number(j.default_shift_id) : 1;
   const globalPanel = `
     <div class="shift-window" style="margin-bottom:20px;border-color:rgba(59,130,246,0.25)">
-      <div class="shift-window-name" style="font-size:17px;letter-spacing:1px">Company default shift</div>
-      <p class="emp-id" style="margin-top:10px;line-height:1.55;max-width:52rem">Everyone without an individual shift uses this for compliance, reports, and new swipes. Assign a different shift on an employee only when they need an override.</p>
+      <div class="shift-window-name" style="font-size:17px;letter-spacing:1px">${escHtml(tx('shift_company_default_title'))}</div>
+      <p class="emp-id" style="margin-top:10px;line-height:1.55;max-width:52rem">${escHtml(tx('shift_company_default_blurb'))}</p>
       <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:14px">
         <select id="global-default-shift-select" style="min-width:220px;max-width:100%;background:var(--surface);border:1px solid var(--border2);color:var(--text);padding:10px 12px;font-family:var(--mono);font-size:12px;outline:none;border-radius:var(--radius-sm)">
           ${(j.data && j.data.length)
-            ? j.data.map(s=>`<option value="${s.id}">${s.shift_name}</option>`).join('')
-            : '<option value="">Add a shift below first</option>'}
+            ? j.data.map(s=>`<option value="${s.id}">${escHtml(s.shift_name)}</option>`).join('')
+            : '<option value="">' + escHtml(tx('shift_add_first')) + '</option>'}
         </select>
-        <button type="button" class="btn btn-primary btn-sm" onclick="saveGlobalDefaultShift()">Save default</button>
+        <button type="button" class="btn btn-primary btn-sm" onclick="saveGlobalDefaultShift()">${escHtml(tx('shift_save_default'))}</button>
       </div>
     </div>`;
   const gselAfter = () => {
     const gsel = document.getElementById('global-default-shift-select');
     if (gsel && j.data && j.data.length) gsel.value = String(defId);
   };
-  document.getElementById('shift-config-area').innerHTML = globalPanel + j.data.map(s=>`
+  document.getElementById('shift-config-area').innerHTML = globalPanel + (j.data || []).map(s=>`
     <div class="shift-window">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
-        <div class="shift-window-name">${s.shift_name}${Number(s.id)===defId ? ' <span class="badge badge-ontime" style="font-size:9px;vertical-align:middle">DEFAULT</span>' : ''}</div>
+        <div class="shift-window-name">${escHtml(s.shift_name)}${Number(s.id)===defId ? ' <span class="badge badge-ontime" style="font-size:9px;vertical-align:middle">' + escHtml(tx('shift_default_badge')) + '</span>' : ''}</div>
         <div style="display:flex;gap:8px;align-items:center">
-          <span class="badge ${s.active?'badge-ontime':'badge-ignored'}">${s.active?'Active':'Inactive'}</span>
-          <button class="btn btn-secondary btn-sm" onclick="toggleEdit(${s.id})">Edit</button>
+          <span class="badge ${s.active?'badge-ontime':'badge-ignored'}">${s.active ? escHtml(tx('shift_active')) : escHtml(tx('shift_inactive'))}</span>
+          <button class="btn btn-secondary btn-sm" onclick="toggleEdit(${s.id})">${escHtml(tx('btn_edit_short'))}</button>
         </div>
       </div>
 
       <div class="shift-timeline">
-        <div class="shift-segment seg-before">Before</div>
-        <div class="shift-segment seg-checkin">IN<br>${s.checkin_start}–${s.checkin_end}</div>
-        <div class="shift-segment seg-work">— work period —</div>
-        <div class="shift-segment seg-checkout">OUT<br>${s.checkout_start}–${s.checkout_end}</div>
-        <div class="shift-segment seg-after">After</div>
+        <div class="shift-segment seg-before">${escHtml(tx('seg_before'))}</div>
+        <div class="shift-segment seg-checkin">${escHtml(tx('shift_timeline_in'))}<br>${escHtml(s.checkin_start)}–${escHtml(s.checkin_end)}</div>
+        <div class="shift-segment seg-work">${escHtml(tx('seg_work'))}</div>
+        <div class="shift-segment seg-checkout">${escHtml(tx('shift_timeline_out'))}<br>${escHtml(s.checkout_start)}–${escHtml(s.checkout_end)}</div>
+        <div class="shift-segment seg-after">${escHtml(tx('seg_after'))}</div>
       </div>
 
       <div id="shift-read-${s.id}" class="shift-times">
         <div>
-          <div class="form-label">Check-in window</div>
-          <div class="time-val" style="font-size:14px">${s.checkin_start} → ${s.checkin_end}</div>
-          <div class="emp-id" style="margin-top:4px">Swipe before ${s.checkin_end} = ON TIME &nbsp;|&nbsp; After = LATE</div>
+          <div class="form-label">${escHtml(tx('form_checkin_window'))}</div>
+          <div class="time-val" style="font-size:14px">${escHtml(s.checkin_start)} → ${escHtml(s.checkin_end)}</div>
+          <div class="emp-id" style="margin-top:4px">${escHtml(tx('shift_help_in', { end: s.checkin_end || '—' }))}</div>
         </div>
         <div>
-          <div class="form-label">Check-out window</div>
-          <div class="time-val" style="font-size:14px">${s.checkout_start} → ${s.checkout_end}</div>
-          <div class="emp-id" style="margin-top:4px">Swipe after ${s.checkout_start} = ON TIME &nbsp;|&nbsp; Before = EARLY OUT</div>
+          <div class="form-label">${escHtml(tx('form_checkout_window'))}</div>
+          <div class="time-val" style="font-size:14px">${escHtml(s.checkout_start)} → ${escHtml(s.checkout_end)}</div>
+          <div class="emp-id" style="margin-top:4px">${escHtml(tx('shift_help_out', { start: s.checkout_start || '—' }))}</div>
         </div>
       </div>
 
       <div id="shift-edit-${s.id}" style="display:none">
         <div class="shift-edit-grid">
-          <div><label class="form-label">Check-in Opens</label><input type="time" id="ci_start_${s.id}" value="${s.checkin_start}" style="width:100%"></div>
-          <div><label class="form-label">Check-in Closes</label><input type="time" id="ci_end_${s.id}" value="${s.checkin_end}" style="width:100%"></div>
-          <div><label class="form-label">Check-out Opens</label><input type="time" id="co_start_${s.id}" value="${s.checkout_start}" style="width:100%"></div>
-          <div><label class="form-label">Check-out Closes</label><input type="time" id="co_end_${s.id}" value="${s.checkout_end}" style="width:100%"></div>
+          <div><label class="form-label">${escHtml(tx('label_ci_opens'))}</label><input type="time" id="ci_start_${s.id}" value="${escHtml(s.checkin_start)}" style="width:100%"></div>
+          <div><label class="form-label">${escHtml(tx('label_ci_closes'))}</label><input type="time" id="ci_end_${s.id}" value="${escHtml(s.checkin_end)}" style="width:100%"></div>
+          <div><label class="form-label">${escHtml(tx('label_co_opens'))}</label><input type="time" id="co_start_${s.id}" value="${escHtml(s.checkout_start)}" style="width:100%"></div>
+          <div><label class="form-label">${escHtml(tx('label_co_closes'))}</label><input type="time" id="co_end_${s.id}" value="${escHtml(s.checkout_end)}" style="width:100%"></div>
         </div>
         <div style="display:flex;gap:8px;margin-top:12px">
-          <button class="btn btn-primary btn-sm" onclick="saveShift(${s.id})">Save</button>
-          <button class="btn btn-secondary btn-sm" onclick="toggleEdit(${s.id})">Cancel</button>
+          <button class="btn btn-primary btn-sm" onclick="saveShift(${s.id})">${escHtml(tx('btn_save'))}</button>
+          <button class="btn btn-secondary btn-sm" onclick="toggleEdit(${s.id})">${escHtml(tx('btn_cancel'))}</button>
         </div>
       </div>
     </div>
@@ -1746,7 +2370,7 @@ async function saveShift(id) {
     checkout_end:  document.getElementById('co_end_'+id).value,
   };
   const j=await(await fetch(BASE+'/api/admin/shifts/'+id,{method:'PUT',headers:{'Content-Type':'application/json','x-admin-token':adminToken},body:JSON.stringify(body)})).json();
-  toast(j.success?'Shift saved ✓':'Error: '+j.error,j.success);
+  toast(j.success ? tx('shift_saved') : tx('toast_error_detail', { detail: j.error || tx('toast_failed') }), j.success);
   if(j.success) loadShiftConfig();
 }
 
@@ -1758,9 +2382,9 @@ async function addShift() {
     checkout_start:document.getElementById('new-co-start').value,
     checkout_end:  document.getElementById('new-co-end').value,
   };
-  if(!body.shift_name){toast('Shift name required',false);return;}
+  if(!body.shift_name){toast(tx('shift_name_required'),false);return;}
   const j=await(await fetch(BASE+'/api/admin/shifts',{method:'POST',headers:{'Content-Type':'application/json','x-admin-token':adminToken},body:JSON.stringify(body)})).json();
-  toast(j.success?'Shift added ✓':'Error: '+j.error,j.success);
+  toast(j.success ? tx('shift_added') : tx('toast_error_detail', { detail: j.error || tx('toast_failed') }), j.success);
   if(j.success){document.getElementById('new-shift-name').value='';loadShiftConfig();}
 }
 
@@ -1773,16 +2397,16 @@ async function saveEmployee() {
     daily_rate: parseFloat(document.getElementById('emp-rate').value)||0,
     provider:   document.getElementById('emp-provider').value.trim(),
   };
-  if(!body.id){toast('Employee ID required',false);return;}
+  if(!body.id){toast(tx('emp_id_required'),false);return;}
   const j=await(await fetch(BASE+'/api/admin/employees',{method:'POST',headers:{'Content-Type':'application/json','x-admin-token':adminToken},body:JSON.stringify(body)})).json();
-  toast(j.success?'Employee saved ✓':'Error: '+j.error,j.success);
+  toast(j.success ? tx('emp_saved') : tx('toast_error_detail', { detail: j.error || tx('toast_failed') }), j.success);
   if(j.success) loadEmployees();
 }
 
 async function loadEmployees() {
   const j=await(await fetch(BASE+'/api/admin/employees',{headers:{'x-admin-token':adminToken}})).json();
   const tbody=document.getElementById('emp-body');
-  if(!j.success||!j.data.length){tbody.innerHTML='<tr><td colspan="5" class="no-data">NO EMPLOYEES REGISTERED</td></tr>';return;}
+  if(!j.success||!j.data.length){tbody.innerHTML='<tr><td colspan="5" class="no-data">'+escHtml(tx('no_employees_registered'))+'</td></tr>';return;}
   tbody.innerHTML=j.data.map(e=>`<tr>
     <td><span class="emp-id">${e.id}</span></td>
     <td class="emp-name">${e.firstname||''} ${e.lastname||''}</td>
@@ -1790,15 +2414,6 @@ async function loadEmployees() {
     <td><span class="time-val">${Number(e.daily_rate||0).toLocaleString()} TZS</span></td>
     <td><span class="emp-id">${e.provider||'—'}</span></td>
   </tr>`).join('');
-}
-
-function escHtml(s) {
-  if (s == null) return '';
-  return String(s)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
 }
 
 async function loadSmsSettings() {
@@ -1811,7 +2426,7 @@ async function loadSmsSettings() {
     if (!ta || !j.success) return;
     ta.value = (j.data && j.data.template) || '';
     if (hint && j.data && j.data.default_template) {
-      hint.textContent = 'Default (if empty): ' + j.data.default_template;
+      hint.textContent = tx('sms_default_prefix') + j.data.default_template;
     }
   } catch (e) {}
 }
@@ -1825,7 +2440,7 @@ async function saveSmsTemplate() {
     body: JSON.stringify({ template }),
   });
   const j = await r.json();
-  toast(j.success ? 'SMS template saved' : (j.error || 'Failed'), j.success);
+  toast(j.success ? tx('sms_template_saved') : (j.error || tx('toast_failed')), j.success);
 }
 
 async function loadSmsLogs(page) {
@@ -1844,29 +2459,30 @@ async function loadSmsLogs(page) {
   let url = BASE + '/api/admin/sms-logs?page=' + p + '&limit=25';
   if (date) url += '&date=' + encodeURIComponent(date);
   if (eid) url += '&employee_id=' + encodeURIComponent(eid);
-  tbody.innerHTML = '<tr><td colspan="9" class="no-data">Loading…</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="9" class="no-data">' + escHtml(tx('loading_soft')) + '</td></tr>';
+  const loc = appLocale === 'sw' ? 'sw-TZ' : 'en-GB';
   try {
     const r = await fetch(url, { headers: { 'x-admin-token': adminToken } });
     const j = await r.json();
     if (!j.success) {
-      tbody.innerHTML = '<tr><td colspan="9" class="no-data">' + escHtml(j.error || 'Error') + '</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="9" class="no-data">' + escHtml(j.error || tx('toast_failed')) + '</td></tr>';
       return;
     }
     const total = j.total || 0;
     const limit = j.limit || 25;
     const pages = Math.max(1, Math.ceil(total / limit));
-    if (meta) meta.textContent = 'Page ' + p + ' of ' + pages + ' — ' + total + ' row(s)';
+    if (meta) meta.textContent = tx('sms_log_page', { page: p, pages, total });
     if (prevBtn) prevBtn.disabled = p <= 1;
     if (nextBtn) nextBtn.disabled = p >= pages;
     if (!j.data || !j.data.length) {
-      tbody.innerHTML = '<tr><td colspan="9" class="no-data">No SMS records</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="9" class="no-data">' + escHtml(tx('no_sms_records')) + '</td></tr>';
       return;
     }
     tbody.innerHTML = j.data.map((row) => {
       const nm = escHtml(((row.firstname || '') + ' ' + (row.lastname || '')).trim() || '—');
       const rawMsg = row.message_body || '';
       const msg = escHtml(rawMsg.slice(0, 120)) + (rawMsg.length > 120 ? '…' : '');
-      const sent = row.created_at ? new Date(row.created_at).toLocaleString('en-GB') : '—';
+      const sent = row.created_at ? new Date(row.created_at).toLocaleString(loc) : '—';
       const st = escHtml(row.status || '—');
       return `<tr>
         <td class="emp-id" style="font-size:11px">${escHtml(sent)}</td>
@@ -1881,7 +2497,7 @@ async function loadSmsLogs(page) {
       </tr>`;
     }).join('');
   } catch (e) {
-    tbody.innerHTML = '<tr><td colspan="9" class="no-data">Connection error</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" class="no-data">' + escHtml(tx('err_connection')) + '</td></tr>';
   }
 }
 
@@ -1907,12 +2523,12 @@ async function loadEmployeeTab() {
     const j = await r.json();
     if (j.success && j.data && j.data.length) list = j.data;
   } catch (e) {
-    tbody.innerHTML='<tr><td colspan="8" class="no-data">CONNECTION ERROR</td></tr>';
+    tbody.innerHTML='<tr><td colspan="8" class="no-data">'+escHtml(tx('emp_tab_conn_error'))+'</td></tr>';
     return;
   }
 
   if (!list.length) {
-    tbody.innerHTML='<tr><td colspan="8" class="no-data">NO ONE IN ATTLOG YET — SWIPES FROM THE DEVICE WILL APPEAR HERE</td></tr>';
+    tbody.innerHTML='<tr><td colspan="8" class="no-data">'+escHtml(tx('emp_tab_empty'))+'</td></tr>';
     return;
   }
 
@@ -1931,12 +2547,13 @@ async function loadEmployeeTab() {
       '—';
     const lastSwipe = e.last_swipe_at ? fmtTime(e.last_swipe_at) : '—';
     const swipeMeta = e.swipe_count != null
-      ? `<span class="emp-id" style="display:block;margin-top:4px">${e.swipe_count} swipes in attlog</span>`
+      ? `<span class="emp-id" style="display:block;margin-top:4px">${escHtml(tx('emp_swipes_attlog', { n: e.swipe_count }))}</span>`
       : '';
     const actions = adminToken
-      ? `<button type="button" class="btn btn-secondary btn-sm" onclick='editEmployee(${JSON.stringify(e.id)})'>Edit</button>
-         <button type="button" class="btn btn-sm" style="background:transparent;border:1px solid var(--danger);color:var(--danger);margin-left:6px" onclick='deleteEmployee(${JSON.stringify(e.id)}, ${JSON.stringify(displayName)})'>Delete</button>`
-      : '<span class="emp-id">Unlock Administration to edit</span>';
+      ? `<button type="button" class="btn btn-secondary btn-sm" onclick='editEmployee(${JSON.stringify(e.id)})'>${escHtml(tx('btn_edit'))}</button>
+         <button type="button" class="btn btn-sm" style="background:transparent;border:1px solid var(--danger);color:var(--danger);margin-left:6px" onclick='deleteEmployee(${JSON.stringify(e.id)}, ${JSON.stringify(displayName)})'>${escHtml(tx('btn_delete'))}</button>
+         <button type="button" class="btn btn-sm" style="background:rgba(239,68,68,0.12);border:1px solid var(--danger);color:var(--danger);margin-left:6px;font-weight:600" title="${escHtml(tx('confirm_delete_full', { name: displayName, id: e.id }))}" onclick='purgeEmployeeFull(${JSON.stringify(e.id)}, ${JSON.stringify(displayName)})'>${escHtml(tx('btn_purge'))}</button>`
+      : '<span class="emp-id">' + escHtml(tx('emp_unlock_admin_edit')) + '</span>';
     return `<tr>
       <td><span class="emp-id">${e.id}</span>${swipeMeta}</td>
       <td class="emp-name">${displayName}</td>
@@ -1946,8 +2563,8 @@ async function loadEmployeeTab() {
       <td>${
         shift
           ? (e.shift_is_default === true
-              ? `<span class="badge badge-ontime">${shift.shift_name}</span><div class="emp-id" style="margin-top:4px">company default</div>`
-              : `<span class="badge badge-ontime">${shift.shift_name}</span><div class="emp-id" style="margin-top:4px">override</div>`)
+              ? `<span class="badge badge-ontime">${escHtml(shift.shift_name)}</span><div class="emp-id" style="margin-top:4px">${escHtml(tx('company_default'))}</div>`
+              : `<span class="badge badge-ontime">${escHtml(shift.shift_name)}</span><div class="emp-id" style="margin-top:4px">${escHtml(tx('shift_override'))}</div>`)
           : '<span class="badge badge-ignored">—</span>'
       }</td>
       <td><span class="time-val">${lastSwipe}</span></td>
@@ -1958,7 +2575,7 @@ async function loadEmployeeTab() {
 
 function openEmpModal(prefillId) {
   if (!adminToken) {
-    toast('Unlock Administration first to add or edit employees', false);
+    toast(tx('toast_unlock_admin_first'), false);
     return;
   }
   // Reset form
@@ -1967,12 +2584,12 @@ function openEmpModal(prefillId) {
   });
   document.getElementById('modal-emp-shift').value='';
   document.getElementById('modal-emp-error').textContent='';
-  document.getElementById('emp-modal-title').textContent = 'Add Employee';
+  document.getElementById('emp-modal-title').textContent = tx('modal_add_employee');
   // Populate shift dropdown
   const sel = document.getElementById('modal-emp-shift');
-  sel.innerHTML='<option value="">— Company default —</option>';
+  sel.innerHTML='<option value="">'+escHtml(tx('opt_company_default'))+'</option>';
   allShifts.forEach(s=>{
-    sel.innerHTML+=`<option value="${s.id}">${s.shift_name}</option>`;
+    sel.innerHTML+=`<option value="${s.id}">${escHtml(s.shift_name)}</option>`;
   });
   if(prefillId) document.getElementById('modal-emp-id').value = prefillId;
   document.getElementById('emp-modal-overlay').classList.add('open');
@@ -1993,14 +2610,14 @@ async function editEmployee(id) {
   const r = await fetch(BASE+'/api/admin/employees/'+encodeURIComponent(id), {headers:{'x-admin-token':adminToken}});
   const j = await r.json();
   if (!j.success) {
-    toast('Failed to load employee: ' + (j.error || r.status), false);
+    toast(tx('err_load_employee', { detail: String(j.error || r.status) }), false);
     return;
   }
   const e = j.data;
   openEmpModal();
   document.getElementById('emp-modal-title').textContent = j.from_attlog_stub
-    ? 'Add to HR register (from attlog)'
-    : 'Edit Employee';
+    ? tx('modal_add_stub')
+    : tx('modal_edit_employee');
   document.getElementById('modal-emp-id').value       = e.id;
   document.getElementById('modal-emp-first').value    = e.firstname||'';
   document.getElementById('modal-emp-last').value     = e.lastname||'';
@@ -2010,20 +2627,57 @@ async function editEmployee(id) {
   document.getElementById('modal-emp-shift').value    = e.shift_id||'';
 }
 
-async function deleteEmployee(id, name) {
-  if(!confirm(`Delete employee ${name} (${id})?`)) return;
-  const r = await fetch(BASE+'/api/admin/employees/'+encodeURIComponent(id),{method:'DELETE',headers:{'x-admin-token':adminToken}});
+async function purgeEmployee(id, name, summaryKey) {
+  const url = BASE + '/api/admin/employees/' + encodeURIComponent(id) + '?purge=1';
+  const r = await fetch(url, { method: 'DELETE', headers: { 'x-admin-token': adminToken } });
   const j = await r.json();
   if (!j.success) {
-    toast('Error: ' + (j.error || r.status), false);
+    toast(tx('toast_error_detail', { detail: j.error || String(r.status) }), false);
+    return;
+  }
+  const c = j.counts || {};
+  toast(tx(summaryKey || 'toast_emp_purged'), true);
+  console.info('[purgeEmployee]', tx('toast_purged_summary', {
+    employeex: c.employeex || 0,
+    attlog: c.attlog || 0,
+    attendance_log: c.attendance_log || 0,
+    payment_queue: c.payment_queue || 0,
+    sms_log: c.sms_log || 0,
+  }));
+  loadEmployeeTab();
+}
+
+async function deleteEmployee(id, name) {
+  if (!confirm(tx('confirm_delete', { name, id }))) return;
+  const r = await fetch(BASE + '/api/admin/employees/' + encodeURIComponent(id), {
+    method: 'DELETE',
+    headers: { 'x-admin-token': adminToken },
+  });
+  const j = await r.json();
+  if (!j.success) {
+    toast(tx('toast_error_detail', { detail: j.error || String(r.status) }), false);
     return;
   }
   if (j.only_in_attlog) {
-    toast(j.message || 'Only in attlog — not removed from device logs.', true);
+    if (confirm(tx('confirm_purge_attlog', { name, id }))) {
+      await purgeEmployee(id, name);
+    } else {
+      toast(j.message || tx('toast_only_attlog'), true);
+    }
     return;
   }
-  toast(j.noop ? 'Nothing to delete (not in register).' : 'Employee deleted', true);
+  if (j.noop) {
+    toast(tx('toast_nothing_delete'), true);
+    return;
+  }
+  toast(tx('toast_emp_deleted'), true);
   loadEmployeeTab();
+}
+
+async function purgeEmployeeFull(id, name) {
+  if (!adminToken) { toast(tx('toast_unlock_admin_first'), false); return; }
+  if (!confirm(tx('confirm_delete_full', { name, id }))) return;
+  await purgeEmployee(id, name, 'toast_emp_purged');
 }
 
 // Search dropdown
@@ -2054,7 +2708,7 @@ function selectEmployeeFromDropdown(id,first,last,phone,rate,provider,shiftId) {
   document.getElementById('modal-emp-rate').value     = rate;
   document.getElementById('modal-emp-provider').value = provider;
   document.getElementById('modal-emp-shift').value    = shiftId||'';
-  document.getElementById('emp-modal-title').textContent = 'Edit Employee';
+  document.getElementById('emp-modal-title').textContent = tx('modal_edit_employee');
   document.getElementById('emp-id-dropdown').classList.remove('open');
 }
 
@@ -2074,15 +2728,15 @@ async function saveEmpModal() {
     provider:    document.getElementById('modal-emp-provider').value.trim(),
     shift_id:    document.getElementById('modal-emp-shift').value||null,
   };
-  if(!body.id){document.getElementById('modal-emp-error').textContent='Employee ID required';return;}
+  if(!body.id){document.getElementById('modal-emp-error').textContent=tx('err_emp_id_modal');return;}
   const r = await fetch(BASE+'/api/admin/employees',{method:'POST',headers:{'Content-Type':'application/json','x-admin-token':adminToken},body:JSON.stringify(body)});
   const j = await r.json();
   if(j.success){
-    toast('Employee saved ✓');
+    toast(tx('emp_saved'));
     closeEmpModal();
     loadEmployeeTab();
   } else {
-    document.getElementById('modal-emp-error').textContent = 'Error: '+j.error;
+    document.getElementById('modal-emp-error').textContent = tx('toast_error_detail', { detail: j.error || tx('toast_failed') });
   }
 }
 
@@ -2097,19 +2751,21 @@ const statusBadgeStyle = {
 };
 
 function statusSpan(s){
+  if (!s) return '<span style="display:inline-block;padding:2px 6px;font-family:var(--mono);font-size:10px;border-radius:2px;color:var(--muted)">—</span>';
   const st = statusBadgeStyle[s]||'';
-  return `<span style="display:inline-block;padding:2px 6px;font-family:var(--mono);font-size:10px;border-radius:2px;${st}">${s||'—'}</span>`;
+  const label = statusDisplay(s);
+  return `<span style="display:inline-block;padding:2px 6px;font-family:var(--mono);font-size:10px;border-radius:2px;${st}">${escHtml(label)}</span>`;
 }
 
 async function previewDailyReport() {
   const d = document.getElementById('report-daily-date').value;
-  if(!d){toast('Select a date',false);return;}
+  if(!d){toast(tx('select_date'),false);return;}
   const r = await fetch(BASE+'/api/reports/daily?date='+d, {headers:{'x-admin-token':adminToken}});
   const j = await r.json();
   const preview = document.getElementById('daily-preview');
   const body = document.getElementById('daily-preview-body');
   if(!j.success||!j.data.length){
-    body.innerHTML='<div style="padding:20px;text-align:center;font-family:var(--mono);font-size:12px;color:var(--muted)">NO DATA FOR THIS DATE</div>';
+    body.innerHTML='<div style="padding:20px;text-align:center;font-family:var(--mono);font-size:12px;color:var(--muted)">'+escHtml(tx('no_data_date'))+'</div>';
     preview.style.display='block'; return;
   }
   body.innerHTML = j.data.map(row=>`
@@ -2130,13 +2786,13 @@ async function previewDailyReport() {
 async function previewMonthlyReport() {
   const m = document.getElementById('report-month').value;
   const y = document.getElementById('report-year').value;
-  if(!y){toast('Enter a year',false);return;}
+  if(!y){toast(tx('enter_year'),false);return;}
   const r = await fetch(`${BASE}/api/reports/monthly?year=${y}&month=${m}`, {headers:{'x-admin-token':adminToken}});
   const j = await r.json();
   const preview = document.getElementById('monthly-preview');
   const body = document.getElementById('monthly-preview-body');
   if(!j.success||!j.data.length){
-    body.innerHTML='<div style="padding:20px;text-align:center;font-family:var(--mono);font-size:12px;color:var(--muted)">NO DATA FOR THIS PERIOD</div>';
+    body.innerHTML='<div style="padding:20px;text-align:center;font-family:var(--mono);font-size:12px;color:var(--muted)">'+escHtml(tx('no_data_period'))+'</div>';
     preview.style.display='block'; return;
   }
   body.innerHTML = j.data.map(row=>`
@@ -2158,24 +2814,24 @@ function exportReport(type, format) {
   let url;
   if(type==='daily'){
     const d=document.getElementById('report-daily-date').value;
-    if(!d){toast('Select a date first',false);return;}
+    if(!d){toast(tx('select_date_first'),false);return;}
     url=`${BASE}/api/reports/export/${format}?type=daily&date=${d}&x-admin-token=${adminToken}`;
   } else {
     const m=document.getElementById('report-month').value;
     const y=document.getElementById('report-year').value;
-    if(!y){toast('Enter a year first',false);return;}
+    if(!y){toast(tx('enter_year_first'),false);return;}
     url=`${BASE}/api/reports/export/${format}?type=monthly&year=${y}&month=${m}&x-admin-token=${adminToken}`;
   }
   // Create a temporary form to POST with auth header via fetch + blob download
   fetch(url, {headers:{'x-admin-token':adminToken}})
-    .then(r=>{if(!r.ok) throw new Error('Export failed'); return r.blob();})
+    .then(r=>{if(!r.ok) throw new Error(tx('toast_failed')); return r.blob();})
     .then(blob=>{
       const ext = format==='pdf'?'.pdf':'.xlsx';
       const fname = type+'_report_'+(type==='daily'?document.getElementById('report-daily-date').value:document.getElementById('report-year').value+'_'+String(document.getElementById('report-month').value).padStart(2,'0'))+ext;
       const a=document.createElement('a');
       a.href=URL.createObjectURL(blob); a.download=fname; a.click();
-      toast('Download started ✓');
-    }).catch(e=>toast('Export failed: '+e.message,false));
+      toast(tx('download_started'));
+    }).catch(e=>toast(tx('export_failed', { msg: e.message }),false));
 }
 
 // ── THEME TOGGLE ──
@@ -2194,6 +2850,7 @@ function applyTheme() {
 
 // Init
 (async function initDashboard() {
+  initLocale();
   const today = todayIsoDate();
   document.getElementById('summary-date').value = today;
   document.getElementById('compliance-date').value = today;

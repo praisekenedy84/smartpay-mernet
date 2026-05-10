@@ -12,9 +12,20 @@ const pool = new Pool({
   database: process.env.DB_NAME,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
+  connectionTimeoutMillis: 8000,
+  idleTimeoutMillis: 30_000,
+  max: 4,
 });
 
-const POLL_INTERVAL_MS = 30 * 100;
+pool.on('error', (err) => {
+  console.error(`[${new Date().toISOString()}] [pool] idle client error:`, err.message);
+});
+
+process.on('unhandledRejection', (err) => {
+  console.error(`[${new Date().toISOString()}] [poller] unhandledRejection:`, err && err.message ? err.message : err);
+});
+
+const POLL_INTERVAL_MS = 15 * 1000;
 const SETTING_KEY_DEFAULT_SHIFT = 'default_shift_id';
 const SETTING_SMS_TEMPLATE = 'sms_eligibility_template';
 
@@ -370,7 +381,14 @@ async function resolveDailyEvents(client, defaultShiftId, employeeShiftMap) {
 }
 
 async function poll() {
-  const client = await pool.connect();
+  let client;
+  try {
+    client = await pool.connect();
+  } catch (err) {
+    const code = err && err.code ? ` (${err.code})` : '';
+    console.error(`[${new Date().toISOString()}] DB connect failed${code}: ${err && err.message ? err.message : err} — will retry on next interval`);
+    return;
+  }
   try {
     await client.query(`
       CREATE TABLE IF NOT EXISTS poller_state (
@@ -429,13 +447,17 @@ async function poll() {
   }
 }
 
-console.log(`🔄 SmartPay Poller starting — interval: ${POLL_INTERVAL_MS / 1000}s`);
-pool.connect((err) => {
-  if (err) {
-    console.error('❌ DB connection failed:', err.message);
-    process.exit(1);
+console.log(`SmartPay Poller starting — interval: ${POLL_INTERVAL_MS / 1000}s, host: ${process.env.DB_HOST}:${process.env.DB_PORT}`);
+
+(async function startPoller() {
+  try {
+    const probe = await pool.connect();
+    probe.release();
+    console.log('Connected to PostgreSQL — initial probe ok');
+  } catch (err) {
+    const code = err && err.code ? ` (${err.code})` : '';
+    console.error(`Initial DB probe failed${code}: ${err && err.message ? err.message : err} — poller will keep retrying`);
   }
-  console.log('✅ Connected to PostgreSQL (attendance)');
   poll();
   setInterval(poll, POLL_INTERVAL_MS);
-});
+})();
